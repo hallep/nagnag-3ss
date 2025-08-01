@@ -1,7 +1,3 @@
 pathlib
-os
-requests
-gzip
-io
-pickle
 biopython
+pandas

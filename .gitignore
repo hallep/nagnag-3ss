@@ -5,5 +5,8 @@ __pycache__
 
 # folders
 src/
+sites/
 
+# temporary files/folders
 temp.py
+temp/

@@ -1,12 +1,15 @@
-__all__ = ["ROOT", "requests", "io", "gzip", "pickle", "SeqIO"]
+__all__ = ["ROOT", "pickle", "SeqIO", "Seq", "re", "pd"]
 
 from pathlib import Path
 ROOT = Path(__file__).parent.parent
 
 # Input/Output
-import requests
-import io
-import gzip
 import pickle
 from Bio import SeqIO
 
+# Sequence
+from Bio import Seq
+import re
+
+# Handle Data
+import pandas as pd
