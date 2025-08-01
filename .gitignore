@@ -1,5 +1,5 @@
 # pycache
-__pycache__
+__pycache__/
 *.pyc
 *.pyo
 
@@ -8,5 +8,6 @@ src/
 sites/
 
 # temporary files/folders
+test.py
 temp.py
 temp/

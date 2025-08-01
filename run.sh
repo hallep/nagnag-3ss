@@ -27,4 +27,3 @@ mv clinvar.vcf src
 # ===== IDENTIFY SPLICE SITES ===== #
 mkdir -p sites
 python scripts/sites.py
-
