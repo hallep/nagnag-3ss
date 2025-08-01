@@ -1,0 +1,9 @@
+# pycache
+__pycache__
+*.pyc
+*.pyo
+
+# folders
+src/
+
+temp.py

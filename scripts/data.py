@@ -1,74 +1,100 @@
-''' Download NCBI RefSeq transcript data and hg38 reference genome sequences '''
+''' Download sequence, transcript, and variant data '''
 
-import io
-import requests
-import gzip
-import pickle
-from Bio import SeqIO
+from lib import ROOT, requests, io, gzip, pickle, SeqIO
 
-# Download NCBI RefSeq data
-def download_ncbi_refseq():
+# NCBI RefSeq data
+def ncbi_refseq():
 
-    ''' Download NCBI RefSeq data
+    ''' Download NCBI RefSeq transcript annotation data
     
-    src: https://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/ncbiRefSeq.txt.gz
+    Source: https://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/ncbiRefSeq.txt.gz
     
-    dst: source/ncbiRefSeq.txt    
+    Destination: `src/ncbiRefSeq.txt`
     '''
 
     # download file
     gz_file = requests.get("https://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/ncbiRefSeq.txt.gz")
-
-    # extract content
+    
+    # unzip and extract content
     with gzip.GzipFile(fileobj=io.BytesIO(gz_file.content)) as gz_content:
         content = gz_content.read()
 
-    # write to file
-    with open("source/ncbiRefSeq.txt", "w") as file:
-        file.write(content.decode('utf-8'))
+    # save
+    with open(f"{ROOT}/src/ncbiRefSeq.txt", "w") as txt_file:
+        txt_file.write(content.decode())
 
-# Download hg38 chromosome sequences
-def download_hg38():
-
-    ''' Download hg38 sequence fasta file
+# GRCh38/hg38 chromosome sequences
+def hg38_sequence():
     
-    src: https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz
+    ''' Download GRCh38/hg38 chromosome sequences and save as dictionary
     
-    dst: source/hg38.fa
+    Source: https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz
+    
+    Destination:
+    * fasta: `src/hg38.fa`
+    * dictionary: `src/hg38`
     '''
 
     # download file
     gz_file = requests.get("https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz")
 
-    # extract content
+    # unzip and extract content
     with gzip.GzipFile(fileobj=io.BytesIO(gz_file.content)) as gz_content:
         content = gz_content.read()
 
-    # write to file
-    with open("source/hg38.fa", "w") as file:
-        file.write(content.decode('utf-8'))
+    # save .fasta
+    with open(f"{ROOT}/src/hg38.fa", "w") as fa_file:
+        fa_file.write(content.decode())
 
-# Create sequence dictionary
-def create_hg38_seq_dict():
-    
-    ''' Create a sequence dictionary for reference human genome hg38
-    
-    src: source/hg38.fa
-    
-    dst: source/hg38 (pickle)
+    # convert to dictionary
+    hg38_dict = {record.id : record.seq for record in SeqIO.parse(f"{ROOT}/src/hg38.fa", "fasta")}
 
-        keys: str
-            chromosome name: chr#
-        values: Bio.Seq.Seq
-            0-indexed chromosome sequence  
+    # save dictionary
+    pickle.dump(hg38_dict, (open(f"{ROOT}/src/hg38", "wb")))
+
+# dbSNP variants
+def dbsnp_variants():
+
+    ''' Download dbSNP variants 
+    
+    Source: https://ftp.ncbi.nih.gov/snp/organisms/human_9606_b151_GRCh38p7/VCF/00-All.vcf.gz
+
+    Destination: `src/dbSNP_variants.vcf`
     '''
 
-    hg38_dict = {}
-
-    # create dictionary
-    for record in SeqIO.parse("source/hg38.fa", "fasta"):
-        hg38_dict[record.id] = record.seq
+    # download file
+    gz_file = requests.get("https://ftp.ncbi.nih.gov/snp/organisms/human_9606_b151_GRCh38p7/VCF/00-All.vcf.gz")
     
-    # pickle
-    with open("source/hg38", "wb") as file:
-        pickle.dump(hg38_dict, file)
+    # unzip and extract content
+    with gzip.GzipFile(fileobj=io.BytesIO(gz_file.content)) as gz_content:
+        content = gz_content.read()
+
+    # save
+    with open(f"{ROOT}/src/dbSNP_variants.vcf", "w") as vcf_file:
+        vcf_file.write(content.decode())
+
+# ClinVar variants
+def clinvar_variants():
+
+    ''' Download ClinVar variants 
+    
+    Source: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/clinvar.vcf.gz
+
+    Destination: `src/ClinVar_variants.vcf`
+    '''
+
+    # download file
+    gz_file = requests.get("https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/clinvar.vcf.gz")
+    
+    # unzip and extract content
+    with gzip.GzipFile(fileobj=io.BytesIO(gz_file.content)) as gz_content:
+        content = gz_content.read()
+
+    # save
+    with open(f"{ROOT}/src/ClinVar_variants.vcf", "w") as vcf_file:
+        vcf_file.write(content.decode())
+
+ncbi_refseq()
+hg38_sequence()
+dbsnp_variants()
+clinvar_variants()
