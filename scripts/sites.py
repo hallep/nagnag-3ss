@@ -11,35 +11,36 @@ def get_csites():
     
     **Source:** `src/ncbiRefSeq.tx`    
     
-    **Destination:** `sites/3cs.txt`
-    * index (int): 0-indexed row number in DataFrame
-    * chrom (str): chromosome on which 3' cleavage site is found, formatted as 'chr#'
-    * down_start (int): 0-indexed chromosome position of start of downstream exon
+    `sites/3cs.txt`
+    ---------------
+    * **index** (*int*): 0-indexed row number in DataFrame
+    * **chrom** (*str*): chromosome on which 3' cleavage site is found, formatted as 'chr#'
+    * **down_start** (*int*): 0-indexed chromosome position of start of downstream exon
         * plus strand: first base of downstream exon 
         * minus strand: last base of upstream intron
-    * strand (str): strand of transcript in which cleavage site is found
+    * **strand** (*str*): strand of transcript in which cleavage site is found
         * possible values: "+", "-"
-    * num_scens (int): number of splice scenarios associated with each cleavage site
-    * up_end (str): comma-separate list, 1 for each splice scenario, of the 0-indexed chromosome position of end of upstream exon
+    * **num_scens** (*int*): number of splice scenarios associated with each cleavage site
+    * **up_end** (*str*): comma-separate list, 1 for each splice scenario, of the 0-indexed chromosome position of end of upstream exon
         * plus strand: first base of downstream intron 
         * minus strand: last base of upstream exon
-    * rtype (str): comma-separated list, 1 for each splice scenario, of the RNA type of cleavage site and transcript
-        * "CDS: found in a coding (NM, XM) transcript, within the coding sequence
-        * "5'UTR": found in a coding (NM, XM) transcript, upstream of the coding sequence
-        * "3'UTR": found in a coding (NM, XM) transcript, downstream of the coding sequence
-        * "ncRNA":  found in an non-coding (NR, XR) transcript
-    * phase (str): comma-separated list, 1 for each splice scenario, of the phase (frame) of downstream exon
-        * -1: downstream exon is in a UTR or in a non-coding RNA transcript
-        * 0: downstream exon is the first base of its codon
-        * 1: downstream exon is the second base of its codon
-        * 2: downstream exon is the third base of its codon
-    * accession (str): comma-separated list, 1 for each splice scenario, of forward-slash-separated lists of accession numbers
-    * n_isoforms (str): comma-separated list, 1 for each splice scenario, of the number of transcripts associated with each splice scenario
-    * csite_seq (str): last 3 bases of intron
-    * scen_eflank_5ss (str): comma-separated list, 1 for each splice scenario, of the last 100 bases of the upstream exon
-    * scen_iflank_5ss (str): comma-separated list, 1 for each splice scenario, of the first 100 bases of the intron following the upstream exon
-    * csite_iflank_3ss (str): last 100 bases of the intron (including csite_seq)
-    * csite_eflank_3ss (str): first 100 bases of the downstream exon
+    * **rtype** (*str*): comma-separated list, 1 for each splice scenario, of the RNA type of cleavage site and transcript
+        * *CDS*: found in a coding (NM, XM) transcript, within the coding sequence
+        * *5'UTR*: found in a coding (NM, XM) transcript, upstream of the coding sequence
+        * *3'UTR*: found in a coding (NM, XM) transcript, downstream of the coding sequence
+        * *ncRNA*:  found in an non-coding (NR, XR) transcript
+    * **phase** (*str*): comma-separated list, 1 for each splice scenario, of the phase (frame) of downstream exon
+        * *-1*: downstream exon is in a UTR or in a non-coding RNA transcript
+        * *0*: downstream exon is the first base of its codon
+        * *1*: downstream exon is the second base of its codon
+        * *2*: downstream exon is the third base of its codon
+    * **accession** (*str*): comma-separated list, 1 for each splice scenario, of forward-slash-separated lists of accession numbers
+    * **n_isoforms** (*str*): comma-separated list, 1 for each splice scenario, of the number of transcripts associated with each splice scenario
+    * **csite_seq** (*str*): last 3 bases of intron
+    * **scen_eflank_5ss** (*str*): comma-separated list, 1 for each splice scenario, of the last 100 bases of the upstream exon
+    * **scen_iflank_5ss** (*str*): comma-separated list, 1 for each splice scenario, of the first 100 bases of the intron following the upstream exon
+    * **csite_iflank_3ss** (*str*): last 100 bases of the intron (including csite_seq)
+    * **csite_eflank_3ss** (*str*): first 100 bases of the downstream exon
     '''
 
     # load transcript data table
@@ -210,35 +211,38 @@ def group_csites():
     ''' Group 3' cleavage sites into 3' splice sites
     
     **Source:** `sites/3cs.txt`
-    
-    **Destination:** `sites/3ss.txt`
-    * index (int): 0-indexed row number in DataFrame
-    * chrom (str): chromosome on which 3' splice site is found, formatted as 'chr#'
-    * strand (str): strand of transcript in which cleavage site is found
+
+    `sites/3ss.txt`
+    ---------------
+    * **index** (*int*): 0-indexed row number in DataFrame
+    * **chrom** (*str*): chromosome on which 3' splice site is found, formatted as 'chr#'
+    * **strand** (*str*): strand of transcript in which cleavage site is found
         * possible values: "+", "-"
-    * num_tri (int): number of cleavage sites + adjacent NAGs in the splice site
-    * num_csites (int): number of cleavage sites in the splice site
-    * csite_starts (str): comma-separated list of cleavage site down_start positions
-    * csite_pos (str): comma-separated list of cleavage site positions (0-indexed) within splice site
-    * csite_inds (str): comma-separate list of indices for each cleavage site in 3cs.txt
-    * num_scens (str): number of splice scenarios associated with each splice site
-    * ssite_start (int): 0-indexed start position of splice site (inclusive)
+    * **num_tri** (*int*): number of cleavage sites + adjacent NAGs in the splice site
+    * **num_csites** (*int*): number of cleavage sites in the splice site
+    * **csite_starts** (*str*): comma-separated list of cleavage site down_start positions
+    * **csite_pos** (*str*): comma-separated list of cleavage site positions (0-indexed) within splice site
+    * **csite_inds** (*str*): comma-separate list of indices for each cleavage site in `3cs.txt`
+    * **num_scens** (*str*): number of splice scenarios associated with each splice site
+    * **ssite_start** (*int*): 0-indexed start position of splice site (inclusive)
         * plus (+) strand: first base of the splice site motif
         * minus (-) strand: last base of the upstream intron
-    * ssite_end (int): 0-indexed end position of splice site (exclusive)
+    * **ssite_end** (*int*): 0-indexed end position of splice site (exclusive)
         * plus (+) strand: first base of the downstream exon
         * minus (-) strand: last base of the splice site motif
-    * ssite_type (str): splice site type, with information about number of trinucleotides and whether each is canonical (NAG)
-    * ssite_seq (str): genomic sequence of splice site
-    * ssite_iflank_3ss (str): 100 bases upstream of (and not including) splice site
-    * ssite_eflank_3ss (str): 100 bases downstream of (and not including) splice site
-    * has_nag (int): whether splice site contains a canonical NAG
-        * 0: none of the trinucleotides in the splice site are a canonical NAG
-        * 1: at least one trinucleotide in the splice site is a canonical NAG
-    * uppercase (int): whether the entire splice site sequence is uppercase
+    * **ssite_type** (*str*): splice site type, with information about number of trinucleotides and whether each is canonical (NAG)
+    * **ssite_seq** (*str*): genomic sequence of splice site
+    * **ssite_iflank_3ss** (*str*): 100 bases upstream of (and not including) splice site
+    * **ssite_eflank_3ss** (*str*): 100 bases downstream of (and not including) splice site
+    * **has_nag** (*int*): whether splice site contains a canonical NAG
+        * *0*: none of the trinucleotides in the splice site are a canonical NAG
+        * *1*: at least one trinucleotide in the splice site is a canonical NAG
+    * **uppercase** (*int*): whether the entire splice site sequence is uppercase
 
-    **Destination:** `sites/3cs.txt`
-    * ssite_ind (int): index of splice site in 3ss.txt
+    `sites/3cs.txt`
+    ---------------
+    * **ssite_ind** (*int*): index of splice site in `3ss.txt`
+    * **ssite_type** (*str*): splice site type, with information about number of trinucleotides and whether each is canonical (NAG)
     '''
 
     canon_chroms = [f"chr{c}" for c in list(range(1,23)) + ["X", "Y", "M"]]
@@ -372,12 +376,15 @@ def group_csites():
 
     # splice site indices
     ss_inds = [0] * len(cleavage_sites)
+    ss_type = [""] * len(cleavage_sites)
 
-    for si,cis in ssites["csite_inds"].items():
-        for ci in map(int, cis.split(",")):
+    for si,site in ssites.iterrows():
+        for ci in map(int, site["csite_inds"].split(",")):
             ss_inds[ci] = si
+            ss_type[ci] = site["ssite_type"]
 
     cleavage_sites["ssite_ind"] = ss_inds
+    cleavage_sites["ssite_type"] = ss_inds
     cleavage_sites.to_csv(f"{ROOT}/sites/3cs.txt", sep="\t", index=False)
 
 # Isolate NAGNAGs
@@ -389,22 +396,25 @@ def isolate_nagnags():
     * splice sites: `sites/3ss.txt`
     * cleavage sites: `sites/3cs.txt`
 
-    **Destination:** `sites/nagnag_3ss.txt`
+    `sites/nagnag_3ss.txt`
+    ----------------------
+    same columns as in `3ss.txt`
 
-    **Destination:** `sites/nagnag_3cs.txt`
-    * ssite_start (int): 0-indexed start position, INCLUSIVE and irrespective of strand, of splice site
-    * ssite_end (int): 0-indexed end position, EXCLUSIVE and irrespective of strand, of splice site
-    * ssite_seq (str): genomic sequence of splice site
-    * ssite_down_seq (int): first 3 bases after splice site
-    * ssite_stype (str): splice type of NAGNAG splice site
-        * "PS": constitutive proximal
-        * "DS": constitutive distal
-        * "AS": alternative
-    * csite_stype (str): splice type of cleavage site
-        * "CSP": constitutive proximal
-        * "CSD": constitutive distal
-        * "ASP": alternative proximal
-        * "ASD": alternative distal
+    `sites/nagnag_3cs.txt`
+    ----------------------
+    * **ssite_start** (*int*): 0-indexed start position, INCLUSIVE and irrespective of strand, of splice site
+    * **ssite_end** (*int*): 0-indexed end position, EXCLUSIVE and irrespective of strand, of splice site
+    * **ssite_seq** (*str*): genomic sequence of splice site
+    * **ssite_down_seq** (*int*): first 3 bases after splice site
+    * **ssite_stype** (*str*): splice type of NAGNAG splice site
+        * *PS*: constitutive proximal
+        * *DS*: constitutive distal
+        * *AS*: alternative
+    * **csite_stype** (*str*): splice type of cleavage site
+        * *CSP*: constitutive proximal
+        * *CSD*: constitutive distal
+        * *ASP*: alternative proximal
+        * *ASD*: alternative distal
     '''
 
     # load sites
@@ -482,43 +492,46 @@ def parse_nagnag_scenarios():
     * splice sites: `sites/nagnag_3ss.txt`
     * cleavage sites: `sites/nagnag_3cs.txt`
 
-    **Destination:** `sites/nagnag_scens.txt`
-    * index (int): 0-indexed row number in DataFrame
-    * chrom (str): chromosome on which splice scenario is found, formatted as 'chr#'
-    * ssite_start (int): 0-indexed start position, INCLUSIVE and irrespective of strand, of splice site
-    * ssite_end (int): 0-indexed end position, EXCLUSIVE and irrespective of strand, of splice site
-    * strand (str): strand of transcript in which splice scenario is found
+    `sites/nagnag_scens.txt`
+    ------------------------
+    * **index** (*int*): 0-indexed row number in DataFrame
+    * **chrom** (*str*): chromosome on which splice scenario is found, formatted as 'chr#'
+    * **ssite_start** (*int*): 0-indexed start position, INCLUSIVE and irrespective of strand, of splice site
+    * **ssite_end** (*int*): 0-indexed end position, EXCLUSIVE and irrespective of strand, of splice site
+    * **strand** (*str*): strand of transcript in which splice scenario is found
         * possible values: "+", "-"
-    * up_end (int): 0-indexed chromosome position of end of upstream exon
+    * **up_end** (*int*): 0-indexed chromosome position of end of upstream exon
         * plus strand: first base of downstream intron
         * minus strand: last base of upstream exon
-    * rtype (str): RNA type of splice scenario
-        * "CDS: found in a coding (NM, XM) transcript, within the coding sequence
-        * "5'UTR": found in a coding (NM, XM) transcript, upstream of the coding sequence
-        * "3'UTR": found in a coding (NM, XM) transcript, downstream of the coding sequence
-        * "ncRNA":  found in an non-coding (NR, XR) transcript
-    * phase (int): phase (frame) of downstream exon
-        * -1: downstream exon is in a UTR or in a non-coding RNA transcript
-        * 0: downstream exon is the first base of its codon
-        * 1: downstream exon is the second base of its codon
-        * 2: downstream exon is the third base of its codon
-    * accession (str): comma-separated list, one for each cleavage site, of forward-slash-separated lists of accession numbers
-    * n_isoforms (str): comma-separated list, one for each cleavage site, of number of transcripts associated with splice scenario
-    * up_seq (str): last 3 bases of the upstream exon
-    * ssite_seq (str): genomic sequence of splice site
-    * down_seq (str): first 3 bases after splice site
-    * splice_type (str): splice type of splice scenario
-        * "PS": constitutive proximal
-        * "DS": constitutive distal
-        * "AS": alternative
-    * csite_inds (str): comma-separated list of indices of associated cleavage sites in nagnag_3cs.txt
-    * ssite_ind (int): index of associated cleavage site in nagnag_3ss.txt
+    * **rtype** (*str*): RNA type of splice scenario
+        * *CDS*: found in a coding (NM, XM) transcript, within the coding sequence
+        * *5'UTR*: found in a coding (NM, XM) transcript, upstream of the coding sequence
+        * *3'UTR*: found in a coding (NM, XM) transcript, downstream of the coding sequence
+        * *ncRNA*:  found in an non-coding (NR, XR) transcript
+    * **phase** (*int*): phase (frame) of downstream exon
+        * *-1*: downstream exon is in a UTR or in a non-coding RNA transcript
+        * *0*: downstream exon is the first base of its codon
+        * *1*: downstream exon is the second base of its codon
+        * *2*: downstream exon is the third base of its codon
+    * **accession** (*str*): comma-separated list, one for each cleavage site, of forward-slash-separated lists of accession numbers
+    * **n_isoforms** (*str*): comma-separated list, one for each cleavage site, of number of transcripts associated with splice scenario
+    * **up_seq** (*str*): last 3 bases of the upstream exon
+    * **ssite_seq** (*str*): genomic sequence of splice site
+    * **down_seq** (*str*): first 3 bases after splice site
+    * **splice_type** (*str*): splice type of splice scenario
+        * *PS*: constitutive proximal
+        * *DS*: constitutive distal
+        * *AS*: alternative
+    * **csite_inds** (*str*): comma-separated list of indices of associated cleavage sites in `nagnag_3cs.txt`
+    * **ssite_ind** (*int*): index of associated cleavage site in `nagnag_3ss.txt`
 
-    **Destination:** `sites/nagnag_3ss.txt`
-    * scen_inds (str): comma-separated list of indices of associated splice scenarios in nagnag_scens.txt
+    `sites/nagnag_3ss.txt`
+    ----------------------
+    * **scen_inds** (*str*): comma-separated list of indices of associated splice scenarios in `nagnag_scens.txt`
 
-    **Destination:** `sites/nagnag_3cs.txt`
-    * scen_ind (str): comma-separated list, 1 for each scenario, of indices of associated splice scenarios in nagnag_scens.txt
+    `sites/nagnag_3cs.txt`
+    ----------------------
+    * **scen_ind** (*str*): comma-separated list, 1 for each scenario, of indices of associated splice scenarios in `nagnag_scens.txt`
     '''
 
     # load splice sites

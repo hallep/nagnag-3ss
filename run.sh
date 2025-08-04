@@ -27,3 +27,10 @@ mv clinvar.vcf src
 # ===== IDENTIFY SPLICE SITES ===== #
 mkdir -p sites
 python scripts/sites.py
+
+# ===== ANALYZE PROTEOME EFFECTS ===== #
+
+python scripts/proteome.py
+
+# ===== CONTROL FOR SPLICE SELECTION ===== #
+
