@@ -12,13 +12,13 @@
 '''
 
 from lib import ROOT, pd
-from sequence import get_aa_tsn, get_categorical_outcomes
+from sequence import get_tsn, get_categorical_outcomes
 
 # load splice scenarios
 scens = pd.read_csv(f"{ROOT}/sites/nagnag_scens.txt", sep="\t", index_col=0)
 
 # get transitions
-tsn = [get_aa_tsn(u,m,d,p) for u,m,d,p in zip(scens["up_seq"], scens["ssite_seq"],
+tsn = [get_tsn(u,m,d,p) for u,m,d,p in zip(scens["up_seq"], scens["ssite_seq"],
                                                 scens["down_seq"], scens["phase"])]
 vc_ps, vc_ds, aa_ps, aa_ds, aattype = zip(*tsn)
 

@@ -6,6 +6,9 @@ hg38 = pickle.load(open(f"{ROOT}/src/hg38", "rb"))
 
 # ===== Sequence ===== #
 
+N = ["A", "C", "G", "T"]
+AA = ["A", "F", "I", "L", "M", "P", "V", "W", "C", "N", "Q", "S", "T", "Y", "D", "E", "H", "K", "R", "G", "*"]
+
 # Splice Site Sequence
 def get_ss_seq(chrom:str, pos:int, strand:str, up:int=0, down:int=0, upper:bool=False) -> str:
 
@@ -112,7 +115,7 @@ def get_aattype(ps_aa:str, ds_aa:str) -> str:
     # IDR (indel + replacement)
     return "IDR"
 
-def get_aa_tsn(up:str, motif:str, down:str, phase:str|int) -> tuple[str, str, str, str, str]:
+def get_tsn(up:str, motif:str, down:str, phase:str|int) -> tuple[str, str, str, str, str]:
 
     ''' Get variable RNA codons and amino acids '''
 
@@ -148,9 +151,9 @@ def get_aa_tsn(up:str, motif:str, down:str, phase:str|int) -> tuple[str, str, st
         ds_codon = up[-2:] + down[0]
         ds_aa = str(Seq.translate(ds_codon))
     
-    aatype = get_aattype(ps_aa, ds_aa)
+    aattype = get_aattype(ps_aa, ds_aa)
 
-    return ps_codon, ds_codon, ps_aa, ds_aa, aatype
+    return ps_codon, ds_codon, ps_aa, ds_aa, aattype
 
 # Amino Acid Outcomes
 def inserted(p:int, ps:str, ds:str) -> str:

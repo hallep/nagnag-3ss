@@ -29,8 +29,8 @@ mkdir -p sites
 python scripts/sites.py
 
 # ===== ANALYZE PROTEOME EFFECTS ===== #
-
 python scripts/proteome.py
 
 # ===== CONTROL FOR SPLICE SELECTION ===== #
-
+mkdir -p stats
+python scripts/splice_selection.py

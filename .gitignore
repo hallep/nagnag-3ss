@@ -6,9 +6,9 @@ __pycache__/
 # folders
 src/
 sites/
+stats/
 
 # temporary files/folders
 test.py
 temp.py
-temp/
-thesis/
+old/

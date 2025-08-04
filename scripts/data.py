@@ -1,5 +1,7 @@
 ''' Convert hg38 chromosome sequence .fasta file into BioSeq record dictionary;
-    save as `src/hg38`
+
+**Created Files:**
+* `src/hg38`
 '''
 
 from lib import ROOT, pickle, SeqIO

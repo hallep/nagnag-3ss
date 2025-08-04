@@ -1,5 +1,13 @@
 ''' Parse NCBI RefSeq transcript annotation data 
-    and extract splice sites, cleavage sites, and splice scenarios '''
+and extract splice sites, cleavage sites, and splice scenarios
+    
+**Created Files:**
+* `sites/3ss.txt`
+* `sites/3cs.txt`
+* `sites/nagnag_3ss.txt`
+* `sites/nagnag_3cs.txt`
+* `sites/nagnag_scens.txt`
+'''
 
 from lib import ROOT, pd
 from sequence import get_ss_seq, get_cs_seq, is_nag, get_sstype
@@ -384,7 +392,7 @@ def group_csites():
             ss_type[ci] = site["ssite_type"]
 
     cleavage_sites["ssite_ind"] = ss_inds
-    cleavage_sites["ssite_type"] = ss_inds
+    cleavage_sites["ssite_type"] = ss_type
     cleavage_sites.to_csv(f"{ROOT}/sites/3cs.txt", sep="\t", index=False)
 
 # Isolate NAGNAGs
@@ -632,17 +640,12 @@ def parse_nagnag_scenarios():
     scens = pd.DataFrame(d)
     scens.to_csv(f"{ROOT}/sites/nagnag_scens.txt", sep="\t", index_label="index")
 
-    print(scens)
-
     # splice scenario indices
     ssites["scen_inds"] = [",".join(map(str, inds)) for inds in scen_inds_ss.values()]
     ssites.to_csv(f"{ROOT}/sites/nagnag_3ss.txt", sep="\t", index=True)
 
     csites["scen_inds"] = [",".join(map(str, inds)) for inds in scen_inds_cs.values()]
     csites.to_csv(f"{ROOT}/sites/nagnag_3cs.txt", sep="\t", index=True)
-
-    print(ssites)
-    print(csites)
 
 get_csites()
 group_csites()
