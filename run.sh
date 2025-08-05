@@ -33,8 +33,10 @@ mkdir -p stats
 python scripts/stats.py
 
 # ===== CREATE MOTIF HEATMAPS + LOGOS ===== #
-mkdir -p figures/heatmaps && mkdir -p figures/logos
+mkdir -p figures/heatmaps
 python scripts/motifs.py
+
+mkdir -p figures/logos
 python scripts/logos.py
 
 # ===== ANALYZE PROTEOME EFFECTS ===== #
@@ -44,3 +46,10 @@ python scripts/proteome.py
 mkdir -p proteome
 python scripts/poswise.py
 python scripts/splice_selection.py
+
+# ===== Variants ===== #
+mkdir -p variants/bed && mkdir -p variants/src
+python scripts/variants.py
+
+mkdir -p variants/found
+python scripts/find_variants.py

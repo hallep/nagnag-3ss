@@ -1,12 +1,27 @@
+''' Create splice site sequence logos '''
+
 from lib import ROOT, pd, np, seqlogo
 from sequence import N, hg38
 
-def pfm2ppm(pfm:np.ndarray) -> np.ndarray:
-    return pfm / np.sum(pfm, axis=1, keepdims=True)
-
 def get_ss_ppm(sites:pd.DataFrame, site_len:int=0, up_flank:int=0, down_flank:int=0,
-           site_col:str="ssite_seq", up_col:str=None, down_col:str=None) -> np.ndarray:
+               site_col:str="ssite_seq", up_col:str=None, down_col:str=None) -> np.ndarray:
+
+    ''' Get position probability matrix for splice sites
     
+    Parameters
+    ----------
+    sites : pandas.DataFrame
+        splice sites/scenarios to consider
+    site_len : int (default = 0)
+        length of splice site (e.g., 3 for 1-NAG, 6 for NAGNAG)
+    up_flank, down_flank : int (default = 0)
+        number of bases upstream and downstream (respectively) of splice site to include
+    site_col : str (default = "ssite_seq")
+        name of column containing splice site sequence
+    up_col, down_col : str (default = None)
+        name of columns containing upstream and downstream flank sequences (respectively)
+    '''
+
     # get sequences
     up_seq = sites[up_col].str.slice(start=-up_flank) if (up_flank > 0) else pd.Series("", sites.index)
     site_seq = sites[site_col] if (site_len > 0) else pd.Series("", sites.index)
@@ -21,10 +36,22 @@ def get_ss_ppm(sites:pd.DataFrame, site_len:int=0, up_flank:int=0, down_flank:in
         pos[x] = list(d.values())
 
     # pfm > ppm
-    return pfm2ppm(np.stack(pos))
+    pfm = np.stack(pos)
+    return pfm / np.sum(pfm, axis=1, keepdims=True)
 
 # 3' Splice Site Diagrams
 def create_3ss_diagrams(iflank:int=30, eflank:int=9):
+
+    ''' Create diagrams for 1-NAG and NAGNAG 3' splice sites
+    
+    **Source:**
+    * `sites/3ss.txt`
+    * `sites/nagnag_3ss.txt`
+
+    **Destination:**
+    * `figures/logos/1nag_3ss.svg`
+    * `figures/logos/nagnag_3ss.svg`
+    '''
 
     # Canonical 1-NAGs
     nag = pd.read_csv(f"{ROOT}/sites/3ss.txt", sep="\t")
@@ -48,6 +75,17 @@ def create_3ss_diagrams(iflank:int=30, eflank:int=9):
 # 5' Splice Site Diagrams
 def create_5ss_diagrams(eflank:int=5, iflank:int=9, u1_len:int=13):
 
+    ''' Create diagrams for 5' splice sites and the U1 snRNA
+    
+    **Source:**
+    * `sites/3ss.txt`
+    * `src/hg38`
+
+    **Destination:**
+    * `figures/logos/5ss.svg`
+    * `figures/logos/U1snRNA.svg`
+    '''
+    
     # 5' splice site
     ss = pd.read_csv(f"{ROOT}/sites/3ss.txt", sep="\t")
     ss = ss[ss["uppercase"] == 1]
@@ -75,6 +113,15 @@ def create_5ss_diagrams(eflank:int=5, iflank:int=9, u1_len:int=13):
 
 # NAGNAG Logos by Splice Type
 def create_nagnag_stype_logo(stype:str, iflank:int=30, eflank:int=6):
+
+    ''' Create motif diagram and site data logo for NAGNAGs of a specific splice type
+    
+    **Source:** `sites/nagnag_3ss.txt`
+
+    **Destination:**
+    * `figures/logos/{stype}_motifs.svg`
+    * `figures/logos/{stype}_nagnags.svg`
+    '''
 
     # load sites
     nagnag = pd.read_csv(f"{ROOT}/sites/nagnag_3ss.txt", sep="\t")

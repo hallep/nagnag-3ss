@@ -1,8 +1,10 @@
 ''' Get frequencies:
-* splice site types
-* 1-NAG motifs
-* NAGNAG splice types
-* NAGNAG splice scenario phases
+* splice site types (`stats/3ss_site_type_freq.txt`)
+* NAGNAGs, expected vs. observed (`stats/exp_obs_nagnag_freq.txt`)
+* 1-NAG motifs (`stats/1nag_motif_freq.txt`)
+* NAGNAG motifs (`stats/nagnag_motif_freq.txt`)
+* NAGNAG splice types (`stats/nagnag_splice_type_freq.txt`)
+* NAGNAG splice scenario phases (`stats/nagnag_scen_phase_freq.txt`)
 '''
 
 from lib import ROOT, itertools, pd, np, proportions_ztest
@@ -15,8 +17,8 @@ def ss_type_freq():
     
     **Source:** `sites/3ss.txt`
 
-    `stats/sstype_freq.txt`
-    ------------------------
+    `stats/3ss_site_type_freq.txt`
+    ------------------------------
     * **sstype** (*str*): splice site type
         * possible values: "1C", "1NC", "2C", "2NC", "3+", "all"
     * **num_ss** (*int*): number of splice sites of each type
@@ -55,7 +57,7 @@ def ss_type_freq():
         "num_scen" : count_scen,
         "prop_scen" : count_scen / sum(count_scen[:-1])
     }).set_index(keys="sstype", inplace=False)
-    df.to_csv(f"{ROOT}/stats/sstype_freq.txt", sep="\t")
+    df.to_csv(f"{ROOT}/stats/3ss_site_type_freq.txt", sep="\t")
 
     print("\n=== 3' Splice Sites ===")
     print(df)
@@ -191,8 +193,8 @@ def nagnag_splice_type_freq():
     * `sites/nagnag_3ss.txt`
     * `sites/nagnag_scens.txt`
     
-    `stats/nagnag_stype_freq.txt`
-    -----------------------------
+    `stats/nagnag_splice_type_freq.txt`
+    -----------------------------------
     * **stype** (*str*): NAGNAG splice type
         * possible values: "PS", "DS", "AS", "all"
     * **num_ss** (*int*): number of NAGNAG splice sites of each splice type
@@ -224,7 +226,7 @@ def nagnag_splice_type_freq():
         "num_scen" : count_scen,
         "prop_scen" : count_scen / sum(count_scen[:-1])
     }).set_index(keys="stype", inplace=False)
-    df.to_csv(f"{ROOT}/stats/nagnag_stype_freq.txt", sep="\t")
+    df.to_csv(f"{ROOT}/stats/nagnag_splice_type_freq.txt", sep="\t")
 
     print("\n=== NAGNAG Splice Types ===")
     print(df)
@@ -237,6 +239,7 @@ def nagnag_scen_phase_freq():
     **Source:** `sites/nagnag_scens.txt`
     
     `stats/nagnag_scen_phase_freq.txt`
+    ----------------------------------
     * **phase** (*int*): phase of downstream exon
         * possible values: -1, 0, 1, 2, 3
         * -1 indicates non-coding

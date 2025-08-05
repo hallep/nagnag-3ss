@@ -9,6 +9,7 @@ sites/
 stats/
 proteome/
 figures/
+variants/
 
 # temporary files/folders
 test.py

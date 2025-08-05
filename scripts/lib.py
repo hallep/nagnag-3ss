@@ -1,10 +1,15 @@
-__all__ = ["ROOT", "pickle", "SeqIO", "Seq", "re", "itertools", "pd", "np",
-           "proportions_ztest", "plt", "seqlogo"]
+__all__ = ["ROOT", "tqdm", "progress_map", "progress_starmap", "os", "pickle", "SeqIO",
+           "Seq", "re", "itertools", "pd", "np", "proportions_ztest", "plt", "seqlogo"]
 
 from pathlib import Path
 ROOT = Path(__file__).parent.parent
 
+# Progress
+from tqdm import tqdm
+from parallelbar import progress_map, progress_starmap
+
 # Input/Output
+import os
 import pickle
 from Bio import SeqIO
 

@@ -1,6 +1,34 @@
+''' Create NAGNAG motif heatmaps, split by splice type '''
+
 from lib import ROOT, pd, np, plt
 
 def create_motif_heatmap(sfx:str, cm:str, cth:str, tmax:float, nticks:int, cmax:float=None):
+
+    ''' Create 4x4 heatmap of NAGNAG motifs
+    
+    **Source:** `stats/nagnag_motif_freq.txt`
+    
+    `figures/heatmaps/{col}_motifs.svg`
+    -----------------------------------
+    * **x-axis**: identity of N1 (A, C, G, T)
+    * **y-axis**: identity of N2 (A, C, G, T)
+    * **labels**: number of NAGNAG splice sites of that motif
+
+    Parameters
+    ----------
+    col : str {"all", "ps", "ds", "as"}
+        column of counts to use
+    cm : str
+        name of Matplotlib colormap to use
+    cth : str
+        proportion theshold at which labels should be white instead of black
+    tmax : int
+        maximum tick value to add to colorbar
+    nticks : int
+        number of ticks to add to colorbar
+    cmax : float (default = None)
+        maximum proportion to show on colorbar
+    '''
 
     # load motif frequencies
     data = pd.read_csv(f"{ROOT}/stats/nagnag_motif_freq.txt", sep="\t", index_col=0)

@@ -1,3 +1,5 @@
+''' Get position-wise base frequencies for 1-NAG and NAGNAG 3' splice sites '''
+
 from lib import ROOT, pd, np
 from sequence import N
 

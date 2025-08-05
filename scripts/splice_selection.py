@@ -7,15 +7,15 @@ Source:
 * **NAGNAGs**: `proteome/nagnag_poswise_freq.txt`
 
 `proteome/variable_codon_freq.txt`
--------------------------------
+----------------------------------
 * index: (phase, vc_ps, vc_ds)
 * columns:
     * ("tsn", x); x = {"aa_ps", "aa_ds", "aattype", "ins_aa", "del_aa"}
     * ("exp", x); x = {"exp_stoch", "exp_splice", "exp_ps", "exp_ds", "exp_as"}
     * (freq, stype); freq = {"prop", "num"}; stype = {"all", "ps", "ds", "as"}
 
-`proteome/variable_aa_freq.txt`
-----------------------------
+`proteome/variable_amino_acid_freq.txt`
+---------------------------------------
 * index: (phase, aa_ps, aa_ds)
 * columns:
     * ("tsn", x); x = {"aattype", "ins_aa", "del_aa"}
@@ -23,8 +23,16 @@ Source:
     * (freq, stype); freq = {"prop", "num"}; stype = {"all", "ps", "ds", "as"}
 
 `proteome/transition_type.txt`
----------------------------
+------------------------------
 * index: (phase, aattype)
+* columns:
+    * ("exp", x); x = {"exp_stoch", "exp_splice", "exp_ps", "exp_ds", "exp_as"}
+    * (freq, stype); freq = {"prop", "num"}; stype = {"all", "ps", "ds", "as"}
+
+`proteome/aa_outcomes.txt`
+--------------------------
+* index: (phase, cat, aa)
+    * cat = {"ins", "del"}
 * columns:
     * ("exp", x); x = {"exp_stoch", "exp_splice", "exp_ps", "exp_ds", "exp_as"}
     * (freq, stype); freq = {"prop", "num"}; stype = {"all", "ps", "ds", "as"}
@@ -161,7 +169,7 @@ def get_aas(vc:pd.DataFrame) -> pd.DataFrame:
 aas = {p : get_aas(a) for p,a in vcs.items()}
 aa = pd.concat(aas.values(), keys=aas.keys())
 aa.index.names = ["phase", "aa_ps", "aa_ds"]
-aa.to_csv(f"{ROOT}/proteome/variable_aa_freq.txt", sep="\t")
+aa.to_csv(f"{ROOT}/proteome/variable_amino_acid_freq.txt", sep="\t")
 
 # === Amino Acid Transition Type === #
 def get_aatt(aa:pd.DataFrame) -> pd.DataFrame:
