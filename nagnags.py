@@ -63,16 +63,16 @@ def statistics():
     os.makedirs("stats", exist_ok=True)
 
     # splice site breakdown (Table 1)
-    stats.count_ss_types()
+    stats.ss_type_freq()
 
     # canonical NAG motifs (Table 4)
-    stats.count_1nag_motifs()
+    stats.canon_1nag_motif_freq()
 
     # NAGNAG splice types (Table 2)
-    stats.count_nagnag_splice_types()
+    stats.nagnag_splice_type_freq()
 
     # NAGNAG splice scenario phases (Table 3)
-    stats.count_nagnag_phases()
+    stats.nagnag_scen_phase_freq()
 
 # Analyze NAGNAG motifs by splice site
 def motifs():

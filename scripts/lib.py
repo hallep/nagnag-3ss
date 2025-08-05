@@ -1,4 +1,5 @@
-__all__ = ["ROOT", "pickle", "SeqIO", "Seq", "re", "itertools", "pd", "np"]
+__all__ = ["ROOT", "pickle", "SeqIO", "Seq", "re", "itertools", "pd", "np",
+           "proportions_ztest"]
 
 from pathlib import Path
 ROOT = Path(__file__).parent.parent
@@ -15,3 +16,4 @@ import re
 import itertools
 import pandas as pd
 import numpy as np
+from statsmodels.stats.proportion import proportions_ztest

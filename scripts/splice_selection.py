@@ -3,10 +3,10 @@
 Source:
 -------
 * **splice scenarios**: `sites/nagnag_scens.txt`
-* **1-NAGs**: `stats/1nag_poswise_freq.txt`
-* **NAGNAGs**: `stats/nagnag_poswise_freq.txt`
+* **1-NAGs**: `proteome/1nag_poswise_freq.txt`
+* **NAGNAGs**: `proteome/nagnag_poswise_freq.txt`
 
-`stats/variable_codon_freq.txt`
+`proteome/variable_codon_freq.txt`
 -------------------------------
 * index: (phase, vc_ps, vc_ds)
 * columns:
@@ -14,7 +14,7 @@ Source:
     * ("exp", x); x = {"exp_stoch", "exp_splice", "exp_ps", "exp_ds", "exp_as"}
     * (freq, stype); freq = {"prop", "num"}; stype = {"all", "ps", "ds", "as"}
 
-`stats/variable_aa_freq.txt`
+`proteome/variable_aa_freq.txt`
 ----------------------------
 * index: (phase, aa_ps, aa_ds)
 * columns:
@@ -22,7 +22,7 @@ Source:
     * ("exp", x); x = {"exp_stoch", "exp_splice", "exp_ps", "exp_ds", "exp_as"}
     * (freq, stype); freq = {"prop", "num"}; stype = {"all", "ps", "ds", "as"}
 
-`stats/transition_type.txt`
+`proteome/transition_type.txt`
 ---------------------------
 * index: (phase, aattype)
 * columns:
@@ -66,10 +66,10 @@ def exp_vc_freq(phase:int, wsource:int=0, stype:str="all") -> list[float]:
                                                              ["u-2", "u-1", "n1", "n2", "d1", "d2"]))),
 
         # weighted from 1-NAGs
-        1 : pd.read_csv(f"{ROOT}/stats/1nag_poswise_freq.txt", sep="\t", index_col=0, header=[0,1,2]),
+        1 : pd.read_csv(f"{ROOT}/proteome/1nag_poswise_freq.txt", sep="\t", index_col=0, header=[0,1,2]),
 
         # weighted from NAGNAGs        
-        2 : pd.read_csv(f"{ROOT}/stats/nagnag_poswise_freq.txt", sep="\t", index_col=0, header=[0,1,2])
+        2 : pd.read_csv(f"{ROOT}/proteome/nagnag_poswise_freq.txt", sep="\t", index_col=0, header=[0,1,2])
     }
 
     # base positions
@@ -147,7 +147,7 @@ def get_vc(phase:int) -> pd.DataFrame:
 vcs = {p : get_vc(p) for p in range(3)}
 vc = pd.concat(vcs.values(), keys=vcs.keys())
 vc.index.names = ["phase", "vc_ps", "vc_ds"]
-vc.to_csv(f"{ROOT}/stats/variable_codon_freq.txt", sep="\t")
+vc.to_csv(f"{ROOT}/proteome/variable_codon_freq.txt", sep="\t")
 
 # Variable Amino Acids
 def get_aas(vc:pd.DataFrame) -> pd.DataFrame:
@@ -161,7 +161,7 @@ def get_aas(vc:pd.DataFrame) -> pd.DataFrame:
 aas = {p : get_aas(a) for p,a in vcs.items()}
 aa = pd.concat(aas.values(), keys=aas.keys())
 aa.index.names = ["phase", "aa_ps", "aa_ds"]
-aa.to_csv(f"{ROOT}/stats/variable_aa_freq.txt", sep="\t")
+aa.to_csv(f"{ROOT}/proteome/variable_aa_freq.txt", sep="\t")
 
 # Amino Acid Transition Type
 def get_aatt(aa:pd.DataFrame) -> pd.DataFrame:
@@ -175,7 +175,7 @@ def get_aatt(aa:pd.DataFrame) -> pd.DataFrame:
 aatts = {p : get_aatt(a) for p,a in aas.items()}
 aatt = pd.concat(aatts.values(), keys=aatts.keys())
 aatt.index.names = ["phase", "aattype"]
-aatt.to_csv(f"{ROOT}/stats/transition_type.txt", sep="\t")
+aatt.to_csv(f"{ROOT}/proteome/transition_type.txt", sep="\t")
 
 # All Scenarios
 def combine(dfs:dict[int, pd.DataFrame]) -> pd.DataFrame:
@@ -209,4 +209,4 @@ def get_out(vc:pd.DataFrame) -> pd.DataFrame:
 outs = {p : get_out(v) for p,v in vcs.items()}
 out = pd.concat(outs.values(), keys=outs.keys())
 out.index.names = ["phase", "cat", "aa"]
-out.to_csv(f"{ROOT}/stats/aa_outcomes.txt", sep="\t")
+out.to_csv(f"{ROOT}/proteome/aa_outcomes.txt", sep="\t")
