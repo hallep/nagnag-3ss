@@ -8,6 +8,7 @@ src/
 sites/
 stats/
 proteome/
+figures/
 
 # temporary files/folders
 test.py

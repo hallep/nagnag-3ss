@@ -28,9 +28,14 @@ mv clinvar.vcf src
 mkdir -p sites
 python scripts/sites.py
 
-# ===== ANALYZE PROTEOME EFFECTS ===== #
+# ===== RUN FREQUENCY STATISTICS ===== #
 mkdir -p stats
 python scripts/stats.py
+
+# ===== CREATE MOTIF HEATMAPS + LOGOS ===== #
+mkdir -p figures/heatmaps && mkdir -p figures/logos
+python scripts/motifs.py
+python scripts/logos.py
 
 # ===== ANALYZE PROTEOME EFFECTS ===== #
 python scripts/proteome.py

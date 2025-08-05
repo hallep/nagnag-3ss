@@ -94,5 +94,5 @@ def poswise_freq_nagnag():
                        for j,st in enumerate(stype) for k,pos in enumerate(position)}, index=N)
     df.to_csv(f"{ROOT}/stats/nagnag_poswise_freq.txt", sep="\t", index=True)
 
-# poswise_freq_1nag()
-# poswise_freq_nagnag()
+poswise_freq_1nag()
+poswise_freq_nagnag()

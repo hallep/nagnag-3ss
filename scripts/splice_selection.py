@@ -105,7 +105,7 @@ ds = scens["vc_ds"].str.upper()
 stypes = [st, "PS", "DS", "AS"]
 st_cols = ["all", "ps", "ds", "as"]
 
-# Variable Codons
+# === Variable Codons === #
 def get_vc(phase:int) -> pd.DataFrame:
     
     # variable bases
@@ -149,7 +149,7 @@ vc = pd.concat(vcs.values(), keys=vcs.keys())
 vc.index.names = ["phase", "vc_ps", "vc_ds"]
 vc.to_csv(f"{ROOT}/proteome/variable_codon_freq.txt", sep="\t")
 
-# Variable Amino Acids
+# === Variable Amino Acids === #
 def get_aas(vc:pd.DataFrame) -> pd.DataFrame:
     agg_fn = {c : "sum" if (c[0] != "tsn") else lambda x: x.iloc[0] for c in vc.columns.values[2:]}
     aa = vc.groupby([("tsn", "aa_ps"), ("tsn", "aa_ds")]).aggregate(agg_fn)
@@ -163,7 +163,7 @@ aa = pd.concat(aas.values(), keys=aas.keys())
 aa.index.names = ["phase", "aa_ps", "aa_ds"]
 aa.to_csv(f"{ROOT}/proteome/variable_aa_freq.txt", sep="\t")
 
-# Amino Acid Transition Type
+# === Amino Acid Transition Type === #
 def get_aatt(aa:pd.DataFrame) -> pd.DataFrame:
     agg_fn = {c : "sum" for c in aa.columns.values[3:]}
     aattype = aa.groupby(("tsn", "aattype")).aggregate(agg_fn)
@@ -195,7 +195,7 @@ def combine(dfs:dict[int, pd.DataFrame]) -> pd.DataFrame:
 
 vcs[3] = combine(vcs)
 
-# Amino Acid Outcomes
+# === Amino Acid Outcomes === #
 def get_out(vc:pd.DataFrame) -> pd.DataFrame:
 
     def cat(col:str) -> pd.DataFrame:

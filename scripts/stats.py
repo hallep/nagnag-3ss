@@ -5,7 +5,8 @@
 * NAGNAG splice scenario phases
 '''
 
-from lib import ROOT, pd, np, proportions_ztest
+from lib import ROOT, itertools, pd, np, proportions_ztest
+from sequence import N
 
 # Splice site types
 def ss_type_freq():
@@ -59,6 +60,46 @@ def ss_type_freq():
     print("\n=== 3' Splice Sites ===")
     print(df)
 
+# Expected vs. observed NAGNAG frequency
+def exp_obs_nagnag_freq():
+
+    ''' Compare the stochastic expected and observed frequency of NAGNAGs
+    
+    **Source:** `sites/3ss.txt`
+    
+    `stats/exp_obs_nagnag_freq.txt`
+    -------------------------------
+    * **exp** (*float*): expected frequency of NAGNAGs under stochastic model
+    * **obs** (*float*): proportion of NAG-containing 3' splice sites that are NAGNAGs
+    * **x** (*int*): number of NAGNAG 3' splice sites
+    * **n** (*int*): number of NAG-containing 3' splice sites
+    * **z** (*float*): z-score from 1-proportion 2-sided z-test
+    * **p** (*float*): p-value in 1-proportion 2-sided z-test
+    '''
+
+    # load splice sites
+    ssites = pd.read_csv(f"{ROOT}/sites/3ss.txt", sep="\t", index_col=0)
+    ssites = ssites[(ssites["uppercase"] == 1)]
+
+    num_nagnag = int((ssites["ssite_type"] == "2C").sum())
+    num_nag = int(ssites["has_nag"].sum())
+    obs = num_nagnag / num_nag
+
+    n = (1/4) * (1/4)
+    nn = 1 - n
+    exp = 2 * (nn * n * nn)
+
+    # z-test
+    z,p = proportions_ztest(count=num_nagnag, nobs=num_nag, value=exp)
+
+    # Series
+    ser = pd.Series(data=[exp, obs, num_nagnag, num_nag, z, p],
+                    index=["exp", "obs", "x", "n", "z", "p"])
+    ser.to_csv(f"{ROOT}/stats/exp_obs_nagnag_freq.txt", sep="\t")
+
+    print("\n=== Expected v. Observed NAGNAG Frequency ===")
+    print(ser)
+
 # 1-NAG motifs
 def canon_1nag_motif_freq():
 
@@ -103,45 +144,43 @@ def canon_1nag_motif_freq():
     print("\n=== 1-NAG Motifs ===")
     print(df)
 
-# Expected vs. observed NAGNAG frequency
-def exp_obs_nagnag_freq():
+# NAGNAG motifs
+def nagnag_motif_freq():
 
-    ''' Compare the stochastic expected and observed frequency of NAGNAGs
+    ''' Determine the frequency of NAGNAG motifs
     
-    **Source:** `sites/3ss.txt`
+    **Source:** `sites/nagnag_3ss.txt`
     
-    `stats/exp_obs_nagnag_freq.txt`
-    -------------------------------
-    * **exp** (*float*): expected frequency of NAGNAGs under stochastic model
-    * **obs** (*float*): proportion of NAG-containing 3' splice sites that are NAGNAGs
-    * **x** (*int*): number of NAGNAG 3' splice sites
-    * **n** (*int*): number of NAG-containing 3' splice sites
-    * **z** (*float*): z-score from 1-proportion 2-sided z-test
-    * **p** (*float*): p-value in 1-proportion 2-sided z-test
+    `stats/nagnag_motif_freq.txt`
+    ---------------------------
+    * **motif** (*str*): NAGNAG motif
+    * **num_all**, **num_ps**, **num_ds**, **num_as** (*int*): 
+        number of all, proximally-, distally-, and alternatively-spliced NAGNAGs (respectively) of each motif
+    * **prop_all**, **prop_ps**, **prop_ds**, **prop_as** (*float*): 
+        proportion of all, proximally-, distally-, and alternatively-spliced NAGNAGs (respectively) of each motif
     '''
 
     # load splice sites
-    ssites = pd.read_csv(f"{ROOT}/sites/3ss.txt", sep="\t", index_col=0)
-    ssites = ssites[(ssites["uppercase"] == 1)]
+    ssites = pd.read_csv(f"{ROOT}/sites/nagnag_3ss.txt", sep="\t", index_col=0, dtype={"csite_pos":"str"})
+    
+    cs_pos = [ssites["csite_pos"], "0", "1", "0,1"]
+    motifs = [f"{n1}AG{n2}AG" for n1,n2 in itertools.product(N, repeat=2)]
 
-    num_nagnag = int((ssites["ssite_type"] == "2C").sum())
-    num_nag = int(ssites["has_nag"].sum())
-    obs = num_nagnag / num_nag
+    # count splice sites
+    freqs = np.array([[len(ssites[(ssites["csite_pos"] == p) & (ssites["ssite_seq"] == m)]) for m in motifs] for p in cs_pos])
+    freqs = np.concatenate((freqs, np.sum(freqs, axis=1, keepdims=True)), axis=1)
+    
+    suffix = ["all", "ps", "ds", "as"]
+    d = {"motif" : motifs + ["all"]}
+    d.update({f"num_{s}" : f for s,f in zip(suffix, freqs)})
+    d.update({f"prop_{s}" : f / sum(f[:-1]) for s,f in zip(suffix, freqs)})
 
-    n = (1/4) * (1/4)
-    nn = 1 - n
-    exp = 2 * (nn * n * nn)
+    # DataFrame
+    df = pd.DataFrame(d).set_index(keys="motif", inplace=False)
+    df.to_csv(f"{ROOT}/stats/nagnag_motif_freq.txt", sep="\t")
 
-    # z-test
-    z,p = proportions_ztest(count=num_nagnag, nobs=num_nag, value=exp)
-
-    # Series
-    ser = pd.Series(data=[exp, obs, num_nagnag, num_nag, z, p],
-                    index=["exp", "obs", "x", "n", "z", "p"])
-    ser.to_csv(f"{ROOT}/exp_obs_nagnag_freq.txt", sep="\t")
-
-    print("\n=== Expected v. Observed NAGNAG Frequency ===")
-    print(ser)
+    print("\n=== NAGNAG Motifs ===")
+    print(df)
 
 # NAGNAG splice types
 def nagnag_splice_type_freq():
@@ -221,15 +260,18 @@ def nagnag_scen_phase_freq():
         "phase" : [-1, 0, 1, 2, 3],
         "count" : count,
         "prop" : count / sum(count[:-1]),
-        "prop_CDS" : [0] + list(count[1:-1] / sum(count[1:-1])) + [1]
+        "prop_CDS" : [np.NaN] + list(count[1:-1] / sum(count[1:-1])) + [1]
     }).set_index(keys="phase", inplace=False)
     df.to_csv("stats/nagnag_scen_phase_count.txt", sep="\t")
 
     print("\n=== NAGNAG Splice Scenario Phases ===")
     print(df)
 
-# ss_type_freq()
-# canon_1nag_motif_freq()
-# exp_obs_nagnag_freq()
-# nagnag_splice_type_freq()
-# nagnag_scen_phase_freq()
+ss_type_freq()
+exp_obs_nagnag_freq()
+
+canon_1nag_motif_freq()
+nagnag_motif_freq()
+
+nagnag_splice_type_freq()
+nagnag_scen_phase_freq()
