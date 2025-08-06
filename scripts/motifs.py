@@ -1,6 +1,7 @@
 ''' Create NAGNAG motif heatmaps, split by splice type '''
 
-from lib import ROOT, pd, np, plt
+from utils import ROOT
+from utils.lib import pd, np, plt
 
 def create_motif_heatmap(sfx:str, cm:str, cth:str, tmax:float, nticks:int, cmax:float=None):
 
@@ -65,12 +66,14 @@ def create_motif_heatmap(sfx:str, cm:str, cth:str, tmax:float, nticks:int, cmax:
     ax.set_xticks([0, 1, 2, 3], ["A", "C", "G", "T"], size=30)
     ax.set_yticks([0, 1, 2, 3], ["A", "C", "G", "T"], size=30)
 
-    plt.show()
-
     # save figure
     fig.savefig(f"figures/heatmaps/{sfx}_nagnag_motifs.svg", transparent=True)
+
+print("creating motif heatmaps...", end="", flush=True)
 
 create_motif_heatmap(sfx="all", cm="YlOrRd", cth=0.3, tmax=0.3, nticks=4)
 create_motif_heatmap(sfx="ps", cm="YlGn", cth=0.35, tmax=0.4, nticks=5)
 create_motif_heatmap(sfx="ds", cm="RdPu", cth=0.3, tmax=0.3, nticks=4)
 create_motif_heatmap(sfx="as", cm="PuBu", cth=0.35, tmax=0.4, nticks=5)
+
+print("done")

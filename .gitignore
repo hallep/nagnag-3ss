@@ -14,4 +14,5 @@ variants/
 # temporary files/folders
 test.py
 temp.py
+test.sh
 old/

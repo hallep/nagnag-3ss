@@ -7,8 +7,9 @@
 * NAGNAG splice scenario phases (`stats/nagnag_scen_phase_freq.txt`)
 '''
 
-from lib import ROOT, itertools, pd, np, proportions_ztest
-from sequence import N
+from utils import ROOT
+from utils.lib import itertools, pd, np, proportions_ztest
+from utils.seq import N
 
 # Splice site types
 def ss_type_freq():
@@ -59,8 +60,7 @@ def ss_type_freq():
     }).set_index(keys="sstype", inplace=False)
     df.to_csv(f"{ROOT}/stats/3ss_site_type_freq.txt", sep="\t")
 
-    print("\n=== 3' Splice Sites ===")
-    print(df)
+    print(" - 3' splice site types")
 
 # Expected vs. observed NAGNAG frequency
 def exp_obs_nagnag_freq():
@@ -99,8 +99,7 @@ def exp_obs_nagnag_freq():
                     index=["exp", "obs", "x", "n", "z", "p"])
     ser.to_csv(f"{ROOT}/stats/exp_obs_nagnag_freq.txt", sep="\t")
 
-    print("\n=== Expected v. Observed NAGNAG Frequency ===")
-    print(ser)
+    print(" - expected NAGNAG frequency...")
 
 # 1-NAG motifs
 def canon_1nag_motif_freq():
@@ -143,8 +142,7 @@ def canon_1nag_motif_freq():
     }).set_index(keys="motif", inplace=False)
     df.to_csv(f"{ROOT}/stats/1nag_motif_freq.txt", sep="\t")
 
-    print("\n=== 1-NAG Motifs ===")
-    print(df)
+    print(" - 1-NAG motifs")
 
 # NAGNAG motifs
 def nagnag_motif_freq():
@@ -181,8 +179,7 @@ def nagnag_motif_freq():
     df = pd.DataFrame(d).set_index(keys="motif", inplace=False)
     df.to_csv(f"{ROOT}/stats/nagnag_motif_freq.txt", sep="\t")
 
-    print("\n=== NAGNAG Motifs ===")
-    print(df)
+    print(" - NAGNAG motifs")
 
 # NAGNAG splice types
 def nagnag_splice_type_freq():
@@ -228,8 +225,7 @@ def nagnag_splice_type_freq():
     }).set_index(keys="stype", inplace=False)
     df.to_csv(f"{ROOT}/stats/nagnag_splice_type_freq.txt", sep="\t")
 
-    print("\n=== NAGNAG Splice Types ===")
-    print(df)
+    print(" - NAGNAG splice types")
 
 # NAGNAG splice scenario phases
 def nagnag_scen_phase_freq():
@@ -267,8 +263,9 @@ def nagnag_scen_phase_freq():
     }).set_index(keys="phase", inplace=False)
     df.to_csv("stats/nagnag_scen_phase_count.txt", sep="\t")
 
-    print("\n=== NAGNAG Splice Scenario Phases ===")
-    print(df)
+    print(" - NAGNAG splice scenario phases")
+
+print("computing frequency statistics...")
 
 ss_type_freq()
 exp_obs_nagnag_freq()
@@ -278,3 +275,5 @@ nagnag_motif_freq()
 
 nagnag_splice_type_freq()
 nagnag_scen_phase_freq()
+
+print("done")

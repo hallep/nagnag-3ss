@@ -11,8 +11,11 @@
 * **del_aa** (*str*): deleted amino acids (from distal to proximal)
 '''
 
-from lib import ROOT, pd
-from sequence import get_tsn, get_categorical_outcomes
+from utils import ROOT
+from utils.lib import pd
+from utils.seq import get_tsn, get_categorical_outcomes
+
+print("calculating proteomic effects...", end="", flush=True)
 
 # load splice scenarios
 scens = pd.read_csv(f"{ROOT}/sites/nagnag_scens.txt", sep="\t", index_col=0)
@@ -35,3 +38,5 @@ scens["del_aa"] = del_aa
 
 # save DataFrame
 scens.to_csv(f"{ROOT}/sites/nagnag_scens.txt", sep="\t", index=True)
+
+print("done")

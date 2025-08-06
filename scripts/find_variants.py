@@ -1,6 +1,9 @@
-from lib import ROOT, os, progress_map, progress_starmap, pd
-from sequence import CHROMS
-from scripts.variants import dtypes, txt_cols, SS, DB, EFF, filter_effect
+''' Find splice site-affecting variants from dbSNP, ClinVar, and HGMD Splice '''
+
+from utils import ROOT
+from utils.lib import os, progress_map, progress_starmap, pd
+from utils.seq import CHROMS
+from utils.vnts import dtypes, txt_cols, SS, DB, EFF, filter_effect
 
 # Parse bedtools intersect output
 def parse_intersect(intersect:pd.DataFrame) -> tuple[int, str, str]:
@@ -24,19 +27,19 @@ def parse_intersect(intersect:pd.DataFrame) -> tuple[int, str, str]:
 
 # Find affecting variants
 def find_variants(site_bed:str, vnt_bed:str, intersect:str, sites:pd.DataFrame, match_strand:bool,
-                  filter:str=None) -> tuple[list[int], list[str], list[str], list[str], list[str], list[str]]:
+                  filter:str=None) -> tuple[list[int], list[str], list[str], list[str], list[str]]:
     
     ''' Run bedtools intersect and determine:
         * number, ids, and positions of variants in each splice site
-        * affecting variants and affected sites' indices
+        * affecting variants
     '''
 
     # run bedtools intersect
     os.system(f"bedtools intersect -a {site_bed} -b {vnt_bed} -wa -wb {"-s" if match_strand else ""} > {intersect}")
 
     # load results
-    res = pd.read_csv(intersect, sep="\t", dtype={"i":"int","a":"str"}, index_col=0, header=None, usecols=[3, 4, 5, 9, 10],
-                      names=["c1", "s1", "e1", "i", "p", "r", "c2", "s2", "e2", "id", "a", "r2"])
+    res = pd.read_csv(intersect, sep="\t", dtype={"i":"int", "id":"str"}, index_col=0, header=None,
+                      usecols=[3, 4, 5, 9, 10], names=["c1", "s1", "e1", "i", "p", "r", "c2", "s2", "e2", "id", "a", "r2"])
 
     # filter NAGNAG-affecting variants
     if filter:
@@ -45,26 +48,15 @@ def find_variants(site_bed:str, vnt_bed:str, intersect:str, sites:pd.DataFrame, 
     # get variants that affect each site
     num, ids, pos = zip(*progress_map(parse_intersect, [res.loc[i] if (i in res.index) else pd.DataFrame() for i in sites.index], n_cpu=24))
 
-    # get sites that affect each variant
-    res["vnts"] = res.index.to_series()
-    agg = res.groupby(by="id").aggregate({"vnts" : lambda x: ",".join(map(str, x))})
-
-    vnt_ids = agg.index.to_list()
-    site_inds = agg["vnts"].to_list()
-
-    return sites.index, list(num), list(ids), list(pos), vnt_ids, site_inds
+    return sites.index, list(num), list(ids), list(pos), list(set(res["id"]))
 
 # Isolate affecting variants
-def isolate_variants(vnt_txt:str, vnt_ids:list[str], site_inds:list[str]) -> str:
+def isolate_variants(vnt_txt:str, vnt_ids:list[str]) -> str:
 
-    ''' Isolate nagnag-affecting variants (vnt_ids), add affected sites' indices (site_inds),
-        and return as tab-separated .txt without index/headers '''
+    ''' Isolate nagnag-affecting variants (vnt_ids) and return as tab-separated .txt without index/headers '''
     
     # get affecting variants
     vnts = pd.read_csv(vnt_txt, sep="\t", index_col=0).loc[vnt_ids]
-
-    # add site indices
-    vnts["nsite_ind"] = site_inds
 
     # get tab-separated string
     return vnts.to_csv(None, sep="\t", index=True, header=False)
@@ -124,13 +116,12 @@ def get_affecting_vnts(sfx:str, site_bed:str, vnt_bed:str, src_site_txt:str, dst
             file.write(header)
 
             # rows
-            rows = progress_starmap(isolate_variants, [(src_vnt_txt.replace("#", c), n, i, None)
-                                                       for c,n,i in zip(CHROMS, results[4], results[5])], n_cpu=24)
+            rows = progress_starmap(isolate_variants, [(src_vnt_txt.replace("#", c), n)
+                                                       for c,n in zip(CHROMS, results[4])], n_cpu=24)
             file.writelines(rows)
 
     else:
         vnts = pd.read_csv(src_vnt_txt, sep="\t", index_col=0, dtype=dtypes).loc[results[4]]
-        vnts["nsite_ind"] = results[5]
         vnts.to_csv(dst_vnt_txt, sep="\t", index=True)
 
 # Combine NAGNAG-affecting variants
@@ -175,32 +166,30 @@ def combine_nagnag_vnts(create_vnt_txt:str, alter_vnt_txt:str, destroy_vnt_txt:s
     sites.to_csv(dst_site_txt, sep="\t", index_label="index")
 
     # Variant Information
+    num = sites["num_vnts"].astype(int).to_list()
+    v = pd.DataFrame({
+        "id" : [i for site in sites["vnt_ids"] for i in site.split(",")],
+        "vnt_effects" : [e for effects in sites["vnt_effects"] for e in effects.split(",")],
+        "ssite_inds" : [ind for n,ind in zip(num,sites["ssite_ind"]) for _ in range(n)],
+        "nsite_inds" : [ind for n,ind in zip(num,sites["nsite_ind"]) for _ in range(n)],
+        "vsite_inds" : [ind for n,ind in zip(num,sites.index) for _ in range(n)]
+    }).groupby("id").aggregate(lambda x: ",".join(map(str, x)))
+
     # load parsed Variant .vcf information
-    c = pd.read_csv(create_vnt_txt, sep="\t", index_col=0, dtype=dtypes)
-    a = pd.read_csv(alter_vnt_txt, sep="\t", index_col=0, dtype=dtypes)
-    d = pd.read_csv(destroy_vnt_txt, sep="\t", index_col=0, dtype=dtypes)
+    c = pd.read_csv(create_vnt_txt, sep="\t", dtype=dtypes)
+    a = pd.read_csv(alter_vnt_txt, sep="\t", dtype=dtypes)
+    d = pd.read_csv(destroy_vnt_txt, sep="\t", dtype=dtypes)
 
-    # add new indices
-    v1 = {str(o) : str(n) for o,n in zip(df1.index, sites.index)}
-    v2 = {str(o) : str(n) for o,n in zip(df2.index, sites.iloc[len(df1):].index)}
+    # combine
+    vnts = pd.concat([c, a, d]).drop_duplicates(subset="id")
+
+    # add information (indices, effect)
+    for col in ["ssite_inds", "nsite_inds", "vsite_inds", "vnt_effects"]:
+        vnts[col] = vnts["id"].apply(lambda x: v.loc[str(x)][col])
     
-    n1 = {str(o) : str(n) for o,n in zip(df1.index, df1["ssite_ind"])}
-    n2 = {str(o) : str(n) for o,n in zip(df2.index, df2.index)}
+    # remove multiple-effect variants
+    vnts = vnts[vnts["vnt_effects"].apply(lambda x: len(set(x.split(","))) > 1)]
 
-    def process(df:pd.DataFrame, vmap:dict[str, str], nmap:dict[str, str]):
-        df["vsite_ind"] = df["nsite_ind"].apply(lambda x: vmap[str(x)])
-        df["ssite_ind"] = df["nsite_ind"].apply(lambda x: nmap[str(x)])
-    
-    process(c, v1, n1)
-    process(a, v2, n2)
-    process(d, v2, n2)
-
-    # combine + aggregate
-    vnts = pd.concat([c, a, d])
-
-    agg_fn = {c : lambda x: ",".join(map(str, x)) if len(set(x)) > 1 else x.iloc[0] for c in vnts.columns}
-    vnts = vnts.groupby(vnts.index, as_index=True).aggregate(agg_fn)
-    
     vnts.to_csv(dst_vnt_txt, sep="\t", index=True)
 
 # ===== Generalized Functions ===== #
@@ -210,16 +199,22 @@ def find_3ss_vnts(db:str):
 
     ''' Find 3'splice site-affecting variants (call get_affecting_vnts())'''
     
+    print(f"finding 3' splice site-affecting {db.replace("_", " ")} variants...")
+
     get_affecting_vnts(sfx=db, site_bed=SS["3ss"].bed[DB[db].by_chrom], vnt_bed=DB[db].bed,
                        src_site_txt=SS["3ss"].txt, dst_site_txt=f"{ROOT}/variants/found/{db}_3ss_vnt_containing_ssites.txt",
                        src_vnt_txt=DB[db].txt, dst_vnt_txt=f"{ROOT}/variants/found/{db}_3ss_vnts.txt",
                        by_chrom=DB[db].by_chrom, match_strand=DB[db].match_strand, filter=None)
+
+    print("done")
 
 # FIND NAGNAG-AFFECTING SNPs
 def find_nagnag_snps(db:str):
 
     ''' Find NAGNAG-affecting SNPs (call get_affecting_vnts() and combine_nagnag_vnts()) '''
 
+    print(f"finding NAGNAG-affecting {db.replace("_", " ")} variants...")
+    
     def snp_effect(e:str):
 
         get_affecting_vnts(sfx=f"{e}_{db}", site_bed=SS[EFF[e].site_type].bed[DB[db].by_chrom],
@@ -237,14 +232,18 @@ def find_nagnag_snps(db:str):
                         alter_vnt_txt=f"{ROOT}/variants/found/{db}_nagnag_altering_vnts.txt",
                         destroy_vnt_txt=f"{ROOT}/variants/found/{db}_nagnag_destroying_vnts.txt",
                         dst_vnt_txt=f"{ROOT}/variants/found/{db}_nagnag_affecting_vnts.txt",
-                        dst_site_txt=f"{ROOT}/variants/found/{db}_nagnag_vnts_containing_ssites.txt",
+                        dst_site_txt=f"{ROOT}/variants/found/{db}_nagnag_vnt_containing_ssites.txt",
                         create_sfx=f"create_{db}", alter_sfx=f"alter_{db}", destroy_sfx=f"destroy_{db}")
 
-find_3ss_vnts("dbSNP")
-find_nagnag_snps("dbSNP")
+    print("done")
 
-find_3ss_vnts("ClinVar")
-find_nagnag_snps("ClinVar")
+# find_3ss_vnts("dbSNP")
+# find_nagnag_snps("dbSNP")
 
-find_3ss_vnts("HGMD_splice")
-find_nagnag_snps("HGMD_splice")
+# find_3ss_vnts("ClinVar")
+# find_nagnag_snps("ClinVar")
+
+# find_3ss_vnts("HGMD_splice")
+# find_nagnag_snps("HGMD_splice")
+
+

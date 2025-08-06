@@ -1,7 +1,8 @@
 ''' Get position-wise base frequencies for 1-NAG and NAGNAG 3' splice sites '''
 
-from lib import ROOT, pd, np
-from sequence import N
+from utils import ROOT
+from utils.lib import pd, np
+from utils.seq import N
 
 # 1-NAG position-wise base frequencies
 def poswise_freq_1nag():
@@ -96,5 +97,9 @@ def poswise_freq_nagnag():
                        for j,st in enumerate(stype) for k,pos in enumerate(position)}, index=N)
     df.to_csv(f"{ROOT}/stats/nagnag_poswise_freq.txt", sep="\t", index=True)
 
+print("calculating position-wise base frequencies...", end="", flush=True)
+
 poswise_freq_1nag()
 poswise_freq_nagnag()
+
+print("done")

@@ -38,8 +38,9 @@ Source:
     * (freq, stype); freq = {"prop", "num"}; stype = {"all", "ps", "ds", "as"}
 '''
 
-from lib import ROOT, itertools, pd, np
-from sequence import N, AA, get_tsn, get_categorical_outcomes
+from utils import ROOT
+from utils.lib import itertools, pd, np
+from utils.seq import N, AA, get_tsn, get_categorical_outcomes
 
 # Expected variable codon frequency
 def exp_vc_freq(phase:int, wsource:int=0, stype:str="all") -> list[float]:
@@ -101,6 +102,8 @@ def exp_vc_freq(phase:int, wsource:int=0, stype:str="all") -> list[float]:
     variable = list(itertools.product(N, repeat=r))
 
     return [np.prod([f[w][p][s][x][b] for w,p,s,x,b in zip(wgts, phases, stypes, pos, vb)]) for vb in variable]
+
+print("analyzing RNA splice selection...", end="", flush=True)
 
 # load scenarios
 scens = pd.read_csv(f"{ROOT}/sites/nagnag_scens.txt", sep="\t")
@@ -218,3 +221,5 @@ outs = {p : get_out(v) for p,v in vcs.items()}
 out = pd.concat(outs.values(), keys=outs.keys())
 out.index.names = ["phase", "cat", "aa"]
 out.to_csv(f"{ROOT}/proteome/aa_outcomes.txt", sep="\t")
+
+print("done")

@@ -1,7 +1,8 @@
 ''' Create splice site sequence logos '''
 
-from lib import ROOT, pd, np, seqlogo
-from sequence import N, hg38
+from utils import ROOT
+from utils.lib import pd, np, seqlogo
+from utils.seq import N, hg38
 
 def get_ss_ppm(sites:pd.DataFrame, site_len:int=0, up_flank:int=0, down_flank:int=0,
                site_col:str="ssite_seq", up_col:str=None, down_col:str=None) -> np.ndarray:
@@ -26,13 +27,13 @@ def get_ss_ppm(sites:pd.DataFrame, site_len:int=0, up_flank:int=0, down_flank:in
     up_seq = sites[up_col].str.slice(start=-up_flank) if (up_flank > 0) else pd.Series("", sites.index)
     site_seq = sites[site_col] if (site_len > 0) else pd.Series("", sites.index)
     down_seq = sites[down_col].str.slice(stop=down_flank) if (down_flank > 0) else pd.Series("", sites.index)
-    seq = (up_seq + site_seq + down_seq).str.upper()
+    sequence = (up_seq + site_seq + down_seq).str.upper()
 
     # get poswise base frequencies
     pos = [0] * (up_flank+site_len+down_flank)
     for x in range(len(pos)):
         d = {n : 0 for n in N}
-        d.update(seq.str.get(x).value_counts().to_dict())
+        d.update(sequence.str.get(x).value_counts().to_dict())
         pos[x] = list(d.values())
 
     # pfm > ppm
@@ -145,9 +146,13 @@ def create_nagnag_stype_logo(stype:str, iflank:int=30, eflank:int=6):
     seqlogo.seqlogo(seqlogo.Ppm(ppm), size="xlarge", format="svg", filename=f"{ROOT}/figures/logos/{stype}_nagnags.svg",
                     first_index=-(iflank+6))
 
+print("creating sequence logos...", end="", flush=True)
+
 create_3ss_diagrams()
 create_5ss_diagrams()
 
 create_nagnag_stype_logo("ps")
 create_nagnag_stype_logo("ds")
 create_nagnag_stype_logo("as")
+
+print("done")

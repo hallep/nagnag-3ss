@@ -1,8 +1,7 @@
-__all__ = ["ROOT", "tqdm", "progress_map", "progress_starmap", "os", "pickle", "SeqIO",
-           "Seq", "re", "itertools", "pd", "np", "proportions_ztest", "plt", "seqlogo"]
+''' External package imports '''
 
-from pathlib import Path
-ROOT = Path(__file__).parent.parent
+__all__ = ["tqdm", "progress_map", "progress_starmap", "os", "pickle", "SeqIO",
+           "Seq", "re", "itertools", "pd", "np", "proportions_ztest", "plt", "seqlogo"]
 
 # Progress
 from tqdm import tqdm

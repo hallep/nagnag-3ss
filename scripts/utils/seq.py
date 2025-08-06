@@ -1,12 +1,13 @@
 ''' Helper functions pertaining to DNA, RNA, and amino acid sequences '''
 
-from lib import ROOT, pickle, re, Seq
+from . import ROOT
+from .lib import pickle, re, Seq
 
 hg38 = pickle.load(open(f"{ROOT}/src/hg38", "rb"))
 
 # ===== Sequence ===== #
 
-CHROMS = [f"chr{c}" for c in list(map(str, range(1, 23))) + ["X", "Y", "MT"]]
+CHROMS = [f"chr{c}" for c in list(map(str, range(1, 23))) + ["X", "Y", "M"]]
 N = ["A", "C", "G", "T"]
 AA = ["A", "F", "I", "L", "M", "P", "V", "W", "C", "N", "Q", "S", "T", "Y", "D", "E", "H", "K", "R", "G", "*"]
 
