@@ -1,7 +1,9 @@
+''' Identify all potential NAGNAGs and create .bed files for sites and variants '''
+
 from utils import ROOT
 from utils.lib import tqdm, re, pd
 from utils.seq import CHROMS, get_ss_seq
-from utils.vnts import txt_cols, vcf_cols, dtypes
+from utils.vnt import txt_cols, vcf_cols, dtypes
 
 # --- Splice Sites --- #
 
@@ -331,9 +333,9 @@ def fmt_chrom(c:str) -> str:
     return f"chr{c}"
 
 # .vcf to .txt file to .bed file
-def vcf2txt2bed(vcf:str, txt:str, bed:str, by_chrom:bool=False):
+def vcf2txt2bed(vcf:str, txt:str, bed:str, by_chrom:bool=False, split_freq:bool=False):
     
-    ''' Convert .vcf file to .txt file, and .txt file to .bed file 
+    ''' Convert .vcf file to .txt file, and .txt file to .bed file
     
     `{txt}`
     -------
@@ -353,12 +355,18 @@ def vcf2txt2bed(vcf:str, txt:str, bed:str, by_chrom:bool=False):
         print(f"converting {vcf.split("/")[-1]} to {txt.split("/")[-1]} and {bed.split("/")[-1]}...")
 
         # open files
-        txt_files = {c : open(txt.replace("#", c), "w") for c in CHROMS}
-        bed_files = {c : open(bed.replace("#", c), "w") for c in CHROMS}
+        if split_freq:
+            freq = {True : "common", False : "rare"}
+            txt_files = {c : {f : open(txt.replace("#", c).replace("$", l), "w") for f,l in freq.items()} for c in CHROMS}
+            bed_files = {c : {f : open(bed.replace("#", c).replace("$", l), "w") for f,l in freq.items()} for c in CHROMS}
+
+        else:
+            txt_files = {c : {True : open(txt.replace("#", c), "w")} for c in CHROMS}
+            bed_files = {c : {True : open(bed.replace("#", c), "w")} for c in CHROMS}
 
         # header
         header = "\t".join(txt_cols) + "\n"
-        [f.write(header) for f in txt_files.values()]
+        [f.write(header) for c in txt_files.values() for f in c.values()]
 
         # for each line:
         for line in tqdm(open(vcf, "r")):
@@ -372,16 +380,18 @@ def vcf2txt2bed(vcf:str, txt:str, bed:str, by_chrom:bool=False):
 
                 # if single-base substitution on canonical chromosome:
                 if (chrom in CHROMS) and (len(ref) == 1) and (any((len(a) == 1) for a in alt.split(","))):
+                    
+                    com = "COMMON=1" in l[7].split(";") if split_freq else True
 
                     # .txt file
-                    txt_files[chrom].write("\t".join([rs] + l[:2] + l[3:]) + "\n")
+                    txt_files[chrom][com].write("\t".join([rs] + l[:2] + l[3:]) + "\n")
 
                     # .bed file
-                    bed_files[chrom].write("\t".join([chrom, str(pos-1), str(pos), rs, alt, "."]) + "\n")
+                    bed_files[chrom][com].write("\t".join([chrom, str(pos-1), str(pos), rs, alt, "."]) + "\n")
 
         # close files
-        [f.close() for f in txt_files.values()]
-        [f.close() for f in bed_files.values()]
+        [f.close() for c in txt_files.values() for f in c.values()]
+        [f.close() for c in bed_files.values() for f in c.values()]
 
     else:
 
@@ -399,13 +409,30 @@ def vcf2txt2bed(vcf:str, txt:str, bed:str, by_chrom:bool=False):
         df = df[(df["chrom"].apply(lambda x: x in CHROMS + ["MT"])) & (df["ref"].str.len() == 1) &
                 (df["alt"].apply(lambda x: any((len(a) == 1) for a in x.split(","))))]
 
-        df.to_csv(txt, sep="\t", index=False)
-
         # .bed file
-        df["start"] = df["pos"] - 1
-        df["strand"] = ["."] * len(df)
-        df = df[["chrom", "start", "pos", "id", "alt", "strand"]]
-        df.to_csv(bed, sep="\t", index=False, header=False)
+        def txt2bed(df:pd.DataFrame, bed_file:str):
+            df["start"] = df["pos"] - 1
+            df["strand"] = ["."] * len(df)
+            df = df[["chrom", "start", "pos", "id", "alt", "strand"]]
+            df.to_csv(bed_file, sep="\t", index=False, header=False)
+
+        if split_freq:
+
+            # common
+            dfC = df[df["info"].apply(lambda x: "COMMON=1" in x.split(";"))]
+            dfC.to_csv(txt.replace("$", "common"))
+            txt2bed(dfC, bed.replace("$", "common"))
+
+            # rare
+            dfR = df[df["info"].apply(lambda x: "COMMON=1" not in x.split(";"))]            
+            dfR.to_csv(txt.replace("$", "rare"))
+            txt2bed(dfR, bed.replace("$", "rare"))
+
+        else:
+
+            # all
+            df.to_csv(txt, sep="\t", index=False)
+            txt2bed(df, bed)
 
     print("done")
 
@@ -465,15 +492,17 @@ def sql2txt2bed(sql:str, txt:str, bed:str, coords:str):
 
     print("done")
 
+# --- Run --- #
+
 create_3ss_bed()
 identify_1off_nagnags()
 create_nagnag_1off_bed()
 
-# vcf2txt2bed(vcf=f"{ROOT}/src/dbSNP.vcf", txt=f"{ROOT}/variants/src/dbSNP_#.txt",
-#             bed=f"{ROOT}/variants/bed/dbSNP_#.bed", by_chrom=True)
+vcf2txt2bed(vcf=f"{ROOT}/src/dbSNP.vcf", txt=f"{ROOT}/variants/src/dbSNP_$_#.txt",
+            bed=f"{ROOT}/variants/bed/dbSNP_$_#.bed", by_chrom=True, split_freq=True)
 
-vcf2txt2bed(vcf=f"{ROOT}/src/clinvar.vcf", txt=f"{ROOT}/variants/src/ClinVar.txt",
-            bed=f"{ROOT}/variants/bed/ClinVar.bed", by_chrom=False)
+vcf2txt2bed(vcf=f"{ROOT}/src/ClinVar.vcf", txt=f"{ROOT}/variants/src/ClinVar.txt",
+            bed=f"{ROOT}/variants/bed/ClinVar.bed", by_chrom=False, split_freq=False)
 
 sql2txt2bed(sql=f"{ROOT}/src/HGMD_pro/splice.txt", txt=f"{ROOT}/variants/src/HGMD_splice.txt",
             bed=f"{ROOT}/variants/bed/HGMD_splice.bed", coords=f"{ROOT}/src/HGMD_pro/hg38_coords.txt")

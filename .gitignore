@@ -12,6 +12,7 @@ figures/
 variants/
 
 # temporary files/folders
+*.ipynb
 test.py
 temp.py
 test.sh

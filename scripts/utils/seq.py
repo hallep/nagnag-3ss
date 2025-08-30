@@ -77,6 +77,16 @@ def get_sstype(seq:str) -> str:
 # ===== Proteome Effects ===== #
 
 # Transition
+TSNS = ["vc_ps", "vc_ds", "aa_ps", "aa_ds", "aattype"]
+AATTYPES = {
+    "DID" : "Duplicate Indel",
+    "NID" : "Pre-Indel",
+    "CID" : "Post-Inde",
+    "IDR" : "Indel + Replacement",
+    "NC" : "No Change",
+    "ET" : "Elongation/Truncation"
+}
+
 def get_aattype(ps_aa:str, ds_aa:str) -> str:
 
     ''' Amino acid transition type '''
@@ -158,6 +168,9 @@ def get_tsn(up:str, motif:str, down:str, phase:str|int) -> tuple[str, str, str, 
     return ps_codon, ds_codon, ps_aa, ds_aa, aattype
 
 # Amino Acid Outcomes
+AA = ["A", "F", "I", "L", "M", "P", "V", "W", "C", "N", "Q", "S", "T", "Y", "D", "E", "H", "K", "R", "G", "*"]
+OUT = ["ins", "del"]
+
 def inserted(p:int, ps:str, ds:str) -> str:
 
     ''' Insertion: which amino acid(s) (incl. *) are inserted (from distal to proximal)

@@ -563,6 +563,7 @@ def parse_nagnag_scenarios():
     csites = pd.read_csv(f"{ROOT}/sites/nagnag_3cs.txt", sep="\t", index_col=0)
     scen_inds_cs = {i : ["" for _ in range(n)] for i,n in csites["num_scens"].items()}
     
+    # columns
     d = {
         "chrom" : [],
         "ssite_start" : [],
@@ -586,7 +587,7 @@ def parse_nagnag_scenarios():
 
     x = 0
     
-    # for each cleavage site:
+    # for each splice site:
     for si,ssite in ssites.iterrows():
         
         # cleavage sites
@@ -605,7 +606,7 @@ def parse_nagnag_scenarios():
         # for all splice scenarios:
         for scen in set(list(insts[0]) + list(insts[1])):
             
-            # location information (first base after motif)
+            # location information
             d["chrom"].append(ssite["chrom"])
             d["ssite_start"].append(ssite["ssite_start"])
             d["ssite_end"].append(ssite["ssite_end"])

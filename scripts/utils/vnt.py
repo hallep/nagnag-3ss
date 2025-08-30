@@ -28,27 +28,32 @@ txt_cols = ["id", "chrom", "pos", "ref", "alt", "qual", "filter", "info"]
 
 # --- Variant Databases --- #
 class VntDatabase:
-    def __init__(self, db:str, by_chrom:str, match_strand:bool):
+    def __init__(self, db:str, by_chrom:str, stranded:bool, split_freq:bool):
         self.by_chrom = by_chrom
-        self.match_strand = match_strand
-        self.txt = f"{ROOT}/variants/src/{db}{"_#" if by_chrom else ""}.txt"
-        self.bed = f"{ROOT}/variants/bed/{db}{"_#" if by_chrom else ""}.bed"
+        self.stranded = stranded
+        self.split_freq = split_freq
+        self.txt = f"{ROOT}/variants/src/{db}{"_$" if split_freq else ""}{"_#" if by_chrom else ""}.txt"
+        self.bed = f"{ROOT}/variants/bed/{db}{"_$" if split_freq else ""}{"_#" if by_chrom else ""}.bed"
 
 DB = {
-    "dbSNP" : VntDatabase("dbSNP", True, False),
-    "dbSNP_common" : VntDatabase("dbSNP", True, False),
-    "dbSNP_rare" : VntDatabase("dbSNP", True, False),
-    "ClinVar" : VntDatabase("ClinVar", False, False),
-    "HGMD_splice" : VntDatabase("HGMD_splice", False, False),
+    "dbSNP" : VntDatabase("dbSNP", True, False, True),
+    "dbSNP_common" : VntDatabase("dbSNP_common", True, False, False),
+    "dbSNP_rare" : VntDatabase("dbSNP_rare", True, False, False),
+    "ClinVar" : VntDatabase("ClinVar", False, False, False),
+    "HGMD_splice" : VntDatabase("HGMD_splice", False, True, False),
 }
 ''' Database Information
 * keys: "dbSNP", "dbSNP_common", "dbSNP_rare", "ClinVar", "HGMD_splice"
 * values: VntDatabase
     * by_chrom (bool): whether to search by chromosome
-    * match_strand (bool): whether strand matters
+    * stranded (bool): whether strand matters
+    * split_freq (bool): whether to split by COMMON flag
     * txt (str): path to .txt file
     * bed (str): path to .bed file
 '''
+
+vnt_dbs = ["dbSNP_common", "dbSNP_rare", "ClinVar", "HGMD_splice"]
+''' List of variant databases: dbSNP_common, dbSNP_rare, ClinVar, HGMD_splice '''
 
 # --- Splice Sites --- #
 class SpliceVntSite:
@@ -72,14 +77,15 @@ SS = {
 '''
 
 # --- NAGNAG Effects --- #
-def filter_effect(df:pd.DataFrame, effect:str=None, match_strand:bool=None) -> pd.DataFrame:
+def filter_effect(df:pd.DataFrame, effect:str=None, stranded:bool=None) -> pd.DataFrame:
 
+    ''' Filter found'''
     # no filtering
     if effect == None:
         return df
 
     # create
-    def filter_create(df:pd.DataFrame, match_strand:bool) -> pd.DataFrame:
+    def filter_create(df:pd.DataFrame, stranded:bool) -> pd.DataFrame:
 
         ''' Filter NAGNAG-creating SNPs
         
@@ -93,7 +99,7 @@ def filter_effect(df:pd.DataFrame, effect:str=None, match_strand:bool=None) -> p
                     * strand ("r") is "-": alt allele ("a") must be "C"
         '''
         
-        if match_strand:
+        if stranded:
             b = ((df["p"] == 1) | (df["p"] == 4)) & (df["a"].str.split(",").apply(lambda x : "A" in x))
             h = ((df["p"] == 2) | (df["p"] == 5)) & (df["a"].str.split(",").apply(lambda x : "G" in x))
 
@@ -131,24 +137,24 @@ def filter_effect(df:pd.DataFrame, effect:str=None, match_strand:bool=None) -> p
 
         return df[(df["p"] != 0) & (df["p"] != 3)]
 
-    # filter function    
+    # filter function
     fn = {
         "create" : filter_create,
         "alter" : filter_alter,
         "destroy" : filter_destroy,
     }[effect]
 
-    return fn(df, match_strand)
+    return fn(df, stranded)
 
-class VntDatabase:
+class VntEffect:
     def __init__(self, site_type:str, adj:str):
         self.site_type = site_type
         self.adj = adj
 
 EFF = {
-    "create" : VntDatabase("1off", "creating"),
-    "alter" : VntDatabase("canon", "altering"),
-    "destroy" : VntDatabase("canon", "destroying"),
+    "create" : VntEffect("1off", "creating"),
+    "alter" : VntEffect("canon", "altering"),
+    "destroy" : VntEffect("canon", "destroying"),
 }
 ''' NAGNAG variant effects 
 * keys: "create", "alter", "destroy"
@@ -156,37 +162,3 @@ EFF = {
     * site_type (str): "1off" or "canon"
     * adj (str): adjective form of effect
 '''
-
-# --- VCF Info Fields --- #
-def get_info_value(info:str, flag:str=None, key:str=None, dtype:str=None):
-
-    ''' Extract value from vcf "info" column '''
-
-    # default value
-    default = {
-        None : False,
-        int : -1,
-        float : -1,
-        bool : False,
-        str : "."
-    }[dtype]
-
-    # no info
-    if info == ".":
-        return default
-
-    info = info.replace(";_", "%3B_").split(";")
-
-    # flag field
-    if flag:
-        return flag in info
-    
-    # key-value field
-    if key:
-        info = {i.split("=")[0] : i.split("=")[1] for i in info if ("=" in i)}
-        
-        if key in info:
-            return info[key]
-        
-    # default
-    return default

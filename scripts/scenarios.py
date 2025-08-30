@@ -1,0 +1,451 @@
+from utils import ROOT
+from utils.lib import itertools, pd, np
+from utils.vnt import dtypes, vnt_dbs
+from utils.seq import N, TSNS, OUT, AA, get_tsn, get_categorical_outcomes
+
+# --- Proteome Effects --- #
+
+# Get proteome effects
+def get_proteome_effects(db:str):
+
+    ''' Get proteome effects for variant scenarios
+
+    `variants/found/{db}_nagnag_vnt_scenarios.txt`
+    ----------------------------------------------
+    added columns: "[metric]_[allele]"
+    * metric: "vc_ps", "vc_ds", "aa_ps", "aa_ds", "aattype", "ins_aa", "del_aa"
+    * allele: "ref", "alt" 
+    '''
+
+    # load scenarios
+    scens = pd.read_csv(f"{ROOT}/variants/found/{db}_nagnag_vnt_scenarios.txt",
+                        sep="\t", index_col=0, dtype=dtypes)
+
+    # columns
+    up = scens["up_seq"].values
+    ref = scens["ref_seq"].values
+    alt = scens["alt_seq"].values
+    down = scens["down_seq"].values
+    phase = scens["phase"].values
+
+    # amino acid transitions
+    tsn_ref = list(zip(*[get_tsn(up=u, motif=m, down=d, phase=p, na0=False) for u,m,d,p in zip(up, ref, down, phase)]))
+    tsn_alt = list(zip(*[get_tsn(up=u, motif=m, down=d, phase=p, na0=False) for u,m,d,p in zip(up, alt, down, phase)]))
+
+    for tr,ta,n in zip(tsn_ref, tsn_alt, TSNS):
+        scens[f"{n}_ref"] = tr
+        scens[f"{n}_alt"] = ta
+
+    _, _, aa_ps_ref, aa_ds_ref, _ = [t for t in tsn_ref]
+    _, _, aa_ps_alt, aa_ds_alt, _ = [t for t in tsn_alt]
+
+    # amino acid outcomes
+    cat_ref = zip(*[get_categorical_outcomes(p, ps, ds) for p,ps,ds in zip(phase, aa_ps_ref, aa_ds_ref)])
+    cat_alt = zip(*[get_categorical_outcomes(p, ps, ds) for p,ps,ds in zip(phase, aa_ps_alt, aa_ds_alt)])
+    
+    for cr,ca,n in zip(cat_ref, cat_alt, OUT):
+        scens[f"{n}_aa_ref"] = cr
+        scens[f"{n}_aa_alt"] = ca
+
+    # save DataFrame
+    scens.to_csv(f"{ROOT}/variants/found/{db}_nagnag_vnt_scenarios.txt", sep="\t", index=True)
+
+    print(scens)
+
+    print(f" - {db.replace("_", " ")}")
+
+# --- Proteome Effect Frequencies --- #
+
+# Variable codon expected frequency
+def vc_weight(phase:int, wsource:int|list[int]=0, stype:str="all"):
+
+    ''' Get weighted variable codon probabilities
+
+    Parameters
+    ----------
+    phase : int {0, 1, 2}
+        NAGNAG phase
+    wsource : list of ints (default = 0 --> all stochastic)
+        weighting source
+        * 0: stochastic (all 1/4)
+        * 1: weighted
+            * exonic basese from 1-NAGs
+            * motif bases from NAGNAGs
+    stype : str {"all", "AS", "PS", "DS"} (default = "all")
+        splice type (for NAGNAGs) from which to get probabilities
+    
+    Returns
+    -------
+    _ : list[float]
+        variable codon probabilities
+    '''
+
+    if isinstance(wsource, int):
+        wsource = [wsource] if phase == 0 else [wsource] * 4
+    
+    # position-wise base probabilities
+    p = {
+        # Stochastic
+        0 : pd.DataFrame(np.full((4, (5*4*6)), 1/4), index=N,
+                         columns=pd.MultiIndex.from_product((["all", "nc", "p0", "p1", "p2"],
+                                                             ["all", "AS", "PS", "DS"],
+                                                             ["u-2", "u-1", "n1", "n2", "d1", "d2"]))),
+
+        # weighted from 1-NAGs
+        1 : pd.read_csv(f"{ROOT}/proteome/1nag_poswise_freq.txt", sep="\t", index_col=0, header=[0,1,2]),
+
+        # weighted from NAGNAGs        
+        2 : pd.read_csv(f"{ROOT}/proteome/nagnag_poswise_freq.txt", sep="\t", index_col=0, header=[0,1,2])
+    }
+
+    # phase
+    phases = {
+        0 : ["nc"],
+        1 : ["p1", "nc", "p1", "p1"],
+        2 : ["p2", "p2", "nc", "p2"]
+    }
+
+    # base positions
+    pos = {
+        0 : ["n2"],
+        1 : ["u-1", "n2", "d1", "d2"],
+        2 : ["u-2", "u-1", "n2", "d1"]
+    }
+
+    # weight sources
+    wgts = {p : [0 if w == 0 else 2 if x == "n2" else 1 for w,x in zip(wsource, pos[p])] for p in range(3)}
+
+    # splice types
+    stypes = {p : [stype if pos == "n2" else "all" for pos in pos[p]] for p in range(3)}
+
+    # variable bases
+    variable = {
+        0 : list(itertools.product(N)),
+        1 : list(itertools.product(N, repeat=4)),
+        2 : list(itertools.product(N, repeat=4))
+    }
+
+    return [np.prod([p[w][f][s][x][b] for w,f,s,x,b in zip(wgts[phase], phases[phase], stypes[phase], pos[phase], vb)]) for vb in variable[phase]]
+
+# Possible variable codons
+def get_possible_vc(phase_freq:tuple[int, int, int]=[1,1,1]) -> pd.DataFrame:
+
+    ''' Get all possible NAGNAG variable codons
+
+    src:
+    * 1-NAGs: `proteome/1nag_poswise_freq.txt`
+    * NAGNAGs: `proteome/nagnag_poswise_freq.txt`
+    
+    Parameters
+    ----------
+    phase_freq : tuple of 3 ints (default = [1, 1, 1])
+        number of scenarios in each phase (for combining)
+    
+    Returns
+    -------
+    vc : pandas.DataFrame
+        all possible variable codons in phases 0, 1, 2, and all
+        * index: "phase", "vc_ps", "vc_ds"
+        * columns: "aa_ps", "aa_ds", "aatype", "exp_stoch", "exp_splice", "exp_ps", "exp_ds", "exp_as", {BIN}, {CAT}
+    '''
+
+    # PHASE 0
+    vc_ps, vc_ds, aa_ps, aa_ds, aattype = zip(*[get_tsn(up="NNN", motif=f"NNN{n}AG", down="NNN", phase=0) for n in N])
+    p0 = pd.DataFrame({
+        "phase" : [0] * len(N),
+        "vc_ps" : vc_ps,
+        "vc_ds" : vc_ds,
+        "aa_ps" : aa_ps,
+        "aa_ds" : aa_ds,
+        "aatype" : aattype,
+        "exp_stoch" : vc_weight(phase=0, wsource=0, stype="all"),
+        "exp_splice" : vc_weight(phase=0, wsource=1, stype="all"),
+        "exp_ps" : vc_weight(phase=0, wsource=1, stype="PS"),
+        "exp_ds" : vc_weight(phase=0, wsource=1, stype="DS"),
+        "exp_as" : vc_weight(phase=0, wsource=1, stype="AS"),
+    })
+
+    # variable bases
+    vb = list(itertools.product(N, repeat=4))
+
+    # PHASE 1
+    vc_ps, vc_ds, aa_ps, aa_ds, aattype = zip(*[get_tsn(up=f"NN{v[0]}", motif=f"NNN{v[1]}AG", down=f"{v[2]}{v[3]}N", phase=1) for v in vb])
+    p1 = pd.DataFrame({
+        "phase" : [1] * len(vb),
+        "vc_ps" : vc_ps,
+        "vc_ds" : vc_ds,
+        "aa_ps" : aa_ps,
+        "aa_ds" : aa_ds,
+        "aatype" : aattype,
+        "exp_stoch" : vc_weight(phase=1, wsource=0, stype="all"),
+        "exp_splice" : vc_weight(phase=1, wsource=[1, 1, 1, 1], stype="all"),
+        "exp_ps" : vc_weight(phase=1, wsource=[1, 1, 1, 1], stype="PS"),
+        "exp_ds" : vc_weight(phase=1, wsource=[1, 1, 1, 1], stype="DS"),
+        "exp_as" : vc_weight(phase=1, wsource=[1, 1, 1, 1], stype="AS"),
+    })
+
+    # PHASE 2
+    vc_ps, vc_ds, aa_ps, aa_ds, aattype = zip(*[get_tsn(up=f"N{v[0]}{v[1]}", motif=f"NNN{v[2]}AG", down=f"{v[3]}NN", phase=2) for v in vb])
+    p2 = pd.DataFrame({
+        "phase" : [2] * len(vb),
+        "vc_ps" : vc_ps,
+        "vc_ds" : vc_ds,
+        "aa_ps" : aa_ps,
+        "aa_ds" : aa_ds,
+        "aatype" : aattype,
+        "exp_stoch" : vc_weight(phase=2, wsource=0, stype="all"),
+        "exp_splice" : vc_weight(phase=2, wsource=[1, 1, 1, 1], stype="all"),
+        "exp_ps" : vc_weight(phase=2, wsource=[1, 1, 1, 1], stype="PS"),
+        "exp_ds" : vc_weight(phase=2, wsource=[1, 1, 1, 1], stype="DS"),
+        "exp_as" : vc_weight(phase=2, wsource=[1, 1, 1, 1], stype="AS"),
+    })
+
+    # add amino acid outcomes
+    for df in [p0, p1, p2]:
+        outcomes = zip(*[get_categorical_outcomes(p, ps, ds) for p,ps,ds in zip(df["phase"], df["aa_ps"], df["aa_ds"])])
+        for n,c in zip(OUT, outcomes):
+            df[n] = c
+
+    # COMBINED
+    p3 = pd.concat([p0, p1, p2])
+    f0, f1, f2 = np.divide(phase_freq, sum(phase_freq))
+
+    p3["phase"] = [3] * len(p3)
+    for col in ["exp_stoch", "exp_splice", "exp_ps", "exp_ds", "exp_as"]:
+        p3[col] = pd.concat([p0[col] * f0, p1[col] * f1, p2[col] * f2])
+
+    # ALL
+    vc = pd.concat([p0, p1, p2, p3]).set_index(keys=["phase", "vc_ps", "vc_ds"])
+
+    return vc
+
+# Count transitions
+def count_transitions(db:str=None):
+
+    ''' Find the frequencies of NAGNAG transitions
+    
+    src: 
+    * reference: `sites/nagnag_scenarios.txt`
+    * variant: `variants/found/{db}_nagnag_vnt_scenarios.txt`
+
+    EXP columns:
+    * reference: "exp_stoch", "exp_splice", "exp_as", "exp_ps", "exp_ds"
+    * variant: "exp_stoch", "exp_splice"
+
+    FREQ columns:
+    * reference: "num", "num_as", "num_ps", "num_ds", "prop", "prop_as", "prop_ps", "prop_ds"
+    * variant: "num", "num_created", "num_altered_ref", "num_altered_alt", "num_destroyed",
+           "prop", "prop_created", "prop_altered_ref", "prop_altered_alt", "prop_destroyed"
+
+    variable codons
+    * filepaths:
+        * reference: `scenarios/nagnag_vc.txt`
+        * variant: `scenarios/{db}_vc.txt`
+    * index: "phase" (0-3), "vc_ps", "vc_ds"
+    * columns: "aa_ps", "aa_ds", "aatype", EXP, OUT, FREQ
+
+    amino acid transitions:
+    * filepaths:
+        * reference: `scenarios/nagnag_aat.txt`
+        * variant: `scenarios/{db}_aat.txt`
+    * index: "phase" (0-3), "aa_ps", "aa_ds"
+    * columns: "num_vc", "prop_vc", "aatype", EXP, OUT, FREQ
+
+    amino acid transition types:
+    * filepaths:
+        * reference: `scenarios/nagnag_aatt.txt`
+        * variant: `scenarios/{db}_aatt.txt`
+    * index: "phase" (0-2), "aatype"
+    * columns: "num_vc", "prop_vc", "num_aat", "prop_aat", EXP, OUT, FREQ
+    '''
+
+    # define {src}, {vc_cols}, {dst_vc}, {dst_aat}, {dst_aatt}, {exp_col}, and {freq_col}
+    if db:
+        src = f"{ROOT}/variants/fount/{db}_nagnag_vnt_scenarios.txt"
+        vc_cols = ["vc_ps_ref", "vc_ps_alt", "vc_ds_ref", "vc_ds_alt"]
+        
+        dst_vc = f"{ROOT}/scenarios/{db}_vc.txt"
+        dst_aat = f"{ROOT}/scenarios/{db}_aat.txt"
+        dst_aatt = f"{ROOT}/scenarios/{db}_aatt.txt"
+        
+        exp_col = ["exp_stoch", "exp_splice"]
+        freq_col = ["num", "num_created", "num_altered_ref", "num_altered_alt", "num_destroyed",
+                    "prop", "prop_created", "prop_altered_ref", "prop_altered_alt", "prop_destroyed"]
+    else:
+        src = f"{ROOT}/sites/nagnag_scenarios.txt"
+        vc_cols = ["vc_ps", "vc_ds"]
+        
+        dst_vc = f"{ROOT}/scenarios/nagnag_vc.txt"
+        dst_aat = f"{ROOT}/scenarios/nagnag_aat.txt"
+        dst_aatt = f"{ROOT}/scenarios/nagnag_aatt.txt"
+
+        exp_col = ["exp_stoch", "exp_splice", "exp_as", "exp_ps", "exp_ds"]
+        freq_col = ["num", "num_as", "num_ps", "num_ds", "prop", "prop_as", "prop_ps", "prop_ds"]
+
+    # load scenarios
+    scens = pd.read_csv(src, sep="\t", index_col=0, dtype=dtypes)
+    scens = scens[scens["phase"] != -1]
+
+    for c in vc_cols:
+        scens[c] = scens[c].str.upper()
+
+    scens_phase = [scens[scens["phase"] == p] for p in range(3)] + [scens]
+
+    # get scenario variable codons
+    if db:
+        scen_ref = [list(zip(df["vnt_effect"], df["vc_ps_ref"], df["vc_ds_ref"])) for df in scens_phase]
+        scen_alt = [list(zip(df["vnt_effect"], df["vc_ps_alt"], df["vc_ds_alt"])) for df in scens_phase]
+    else:
+        scen_vc = [list(zip(df["splice_type"], df["vc_ps"], df["vc_ds"])) for df in scens_phase]
+
+    # Variable Codons
+    vc = get_possible_vc(phase_freq=[len(scens[scens["phase"] == p]) for p in range(3)])
+    codons = [vc.loc[p].index.values for p in range(4)]
+
+    if db:
+        vc.drop(columns=["exp_ps", "exp_ds", "exp_as"], inplace=True)
+
+    # counts and proportions
+    if db:
+        # counts
+        vc["num_created"] = [svcs.count(("CREATE",p,d)) for svcs,vcs in zip(scen_alt, codons) for p,d in vcs]
+        vc["num_altered_ref"] = [svcs.count(("ALTER",p,d)) for svcs,vcs in zip(scen_ref, codons) for p,d in vcs]
+        vc["num_altered_alt"] = [svcs.count(("ALTER",p,d)) for svcs,vcs in zip(scen_alt, codons) for p,d in vcs]
+        vc["num_destroyed"] = [svcs.count(("DESTROY",p,d)) for svcs,vcs in zip(scen_ref, codons) for p,d in vcs]
+        vc.insert(loc=len(vc.columns)-3, column="num", value=vc["num_created"] + vc["num_altered_ref"] + vc["num_altered_alt"] + vc["num_destroyed"])
+        
+        # proportions
+        vc["prop"] = [x / vc.loc[p]["num"].sum() for p in range(4) for x in vc.loc[p]["num"]]
+        vc["prop_created"] = [x / vc.loc[p]["num_created"].sum() for p in range(4) for x in vc.loc[p]["num_created"]]
+        vc["prop_altered_ref"] = [x / vc.loc[p]["num_altered_ref"].sum() for p in range(4) for x in vc.loc[p]["num_altered_ref"]]
+        vc["prop_altered_alt"] = [x / vc.loc[p]["num_altered_alt"].sum() for p in range(4) for x in vc.loc[p]["num_altered_alt"]]
+        vc["prop_destroyed"] = [x / vc.loc[p]["num_destroyed"].sum() for p in range(4) for x in vc.loc[p]["num_destroyed"]]
+    else:
+        # counts
+        vc["num_ps"] = [svcs.count(("PS",p,d)) for svcs,vcs in zip(scen_vc, codons) for p,d in vcs]
+        vc["num_ds"] = [svcs.count(("DS",p,d)) for svcs,vcs in zip(scen_vc, codons) for p,d in vcs]
+        vc["num_as"] = [svcs.count(("AS",p,d)) for svcs,vcs in zip(scen_vc, codons) for p,d in vcs]
+        vc.insert(loc=len(vc.columns)-3, column="num", value=vc["num_ps"] + vc["num_ds"] + vc["num_as"])
+
+        # proportions
+        vc["prop"] = [x / vc.loc[p]["num"].sum() for p in range(4) for x in vc.loc[p]["num"]]
+        vc["prop_as"] = [x / vc.loc[p]["num_as"].sum() for p in range(4) for x in vc.loc[p]["num_as"]]
+        vc["prop_ps"] = [x / vc.loc[p]["num_ps"].sum() for p in range(4) for x in vc.loc[p]["num_ps"]]
+        vc["prop_ds"] = [x / vc.loc[p]["num_ds"].sum() for p in range(4) for x in vc.loc[p]["num_ds"]]
+    
+    print("\n===== Variable Codons =====")
+    print(vc)
+
+    # save
+    vc.to_csv(dst_vc, sep="\t")
+
+    # Variable Amino Acids
+    vc["phase"] = vc.index.get_level_values(0)
+    vc.insert(loc=3, column="num_vc", value=1)
+    vc.insert(loc=4, column="prop_vc", value=[1/len(vc.loc[p]) for p in range(4) for _ in range(len(vc.loc[p]))])
+    vc_phase = [vc.loc[p] for p in range(4)]
+
+    agg = {"aatype" : (lambda ser: ser.iloc[0])}
+    agg.update({col : "sum" for col in ["num_vc", "prop_vc"] + exp_col})
+    agg.update({col : (lambda ser: ser.iloc[0]) for col in OUT})
+    agg.update({col : "sum" for col in freq_col})
+    
+    aat_phase = [v.groupby(["phase", "aa_ps", "aa_ds"]).aggregate(agg) for v in vc_phase]
+    aat = pd.concat(aat_phase)
+
+    print("\n===== Amino Acid Transitions =====")
+    print(aat)
+
+    # save
+    aat.to_csv(dst_aat, sep="\t")
+
+    # Amino Acid Transition Types
+    aat["phase"] = aat.index.get_level_values(0)
+    aat.insert(loc=3, column="num_aat", value=1)
+    aat.insert(loc=4, column="prop_aat", value=[1/len(aat.loc[p]) for p in range(4) for _ in range(len(aat.loc[p]))])
+    aat_phase = [aat.loc[p] for p in [0,1,2]]
+
+    agg = {col : "sum" for col in ["num_vc", "prop_vc", "num_aat", "prop_aat"] + exp_col}
+    agg.update({col : (lambda ser: ser.iloc[0]) for col in OUT})
+    agg.update({col : "sum" for col in freq_col})
+    
+    aat0 = aat.loc[0].drop(columns=["aatype", "phase"])
+    aat0.index = pd.MultiIndex.from_product([[0], aat0.index.get_level_values(0)], names=["phase", "aatype"])
+    aatt_phase = [a.groupby(["phase", "aatype"]).aggregate(agg) for a in aat_phase]
+    aatt = pd.concat([aat0] + aatt_phase).reindex([(0,i) for i in ["E", "Q", "K", "*"]] + list(itertools.product([1,2], ["DID", "NID", "CID", "IDR", "NC", "ET"])))
+
+    # save
+    aatt.to_csv(dst_aatt, sep="\t")
+
+    print("\n===== Amino Acid Transition Types =====")
+    print(aatt)
+
+# Count inserted/deleted amino acids
+def count_outcomes(db:str=None):
+
+    ''' Find the frequencies of amino acid outcomes
+    
+    src: 
+    * reference: `scenarios/nagnag_vc.txt`
+    * variant: `scenarios/{db}_vc.txt`
+
+    dst:
+    * filepaths:
+        * reference: `scenarios/nagnag_outcomes.txt`
+        * variant: `scenarios/{db}_outcomes.txt`
+    * index: phase (0-3), cat ("ins", "del"), aa
+    * columns:
+        * reference: "exp_stoch", "exp_splice", "exp_as", "exp_ps", "exp_ds",
+                     "num", "num_as", "num_ps", "num_ds", "prop", "prop_as", "prop_ps", "prop_ds"
+        * variant: "exp_stoch", "exp_splice", 
+                   "num", "num_created", "num_altered_ref", "num_altered_alt", "num_destroyed",
+                   "prop", "prop_created", "prop_altered_ref", "prop_altered_alt", "prop_destroyed"
+    '''
+
+    # define {src}, {dst}, and {columns}
+    if db:
+        src = f"{ROOT}/scenarios/{db}_vc.txt"
+        dst = f"{ROOT}/scenarios/{db}_outcomes.txt"
+
+        columns = ["exp_stoch", "exp_splice", "num", "num_created", "num_altered_ref", "num_altered_alt", "num_destroyed",
+                   "prop", "prop_created", "prop_altered_ref", "prop_altered_alt", "prop_destroyed"]
+    else:
+        src = f"{ROOT}/scenarios/nagnag_vc.txt"
+        dst = f"{ROOT}/scenarios/nagnag_outcomes.txt"
+
+        columns = ["exp_stoch", "exp_splice", "exp_as", "exp_ps", "exp_ds",
+                   "num", "num_as", "num_ps", "num_ds", "prop", "prop_as", "prop_ps", "prop_ds"]
+
+    # load variable codons
+    vc = pd.read_csv(src, sep="\t")
+    ph = vc["phase"]
+
+    # inserted/deleted amino acids
+    cats = list(itertools.product(OUT, AA))
+
+    # count outcomes
+    out = {p : {col : [vc[(ph == p) & (vc[c].str.contains(a, regex=False))][col].sum()
+                       for c,a in cats] for col in columns} for p in range(4)}
+
+    # DataFrame
+    index = [(a,b,c) for a,(b,c) in itertools.product(range(4), cats)]
+    df = pd.DataFrame({col : [x for p in range(4) for x in out[p][col]] for col in columns},
+                      index=pd.MultiIndex.from_tuples(index, names=["phase", "cat", "aa"]))
+    df.to_csv(dst, sep="\t")
+
+    print("\n===== Outcomes =====")
+    print(df)
+
+# --- Run --- #
+
+def analyze_db(db:str=None):
+    if db:
+        get_proteome_effects(db)
+    count_transitions()
+    count_outcomes()
+
+    print(f" - {db.replace("_", " ") if db else "hg38 reference"}")
+
+print("calculating and counting variant proteomic effects...")
+[analyze_db(db) for db in vnt_dbs]
+print("done")
