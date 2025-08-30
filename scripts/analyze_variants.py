@@ -1,3 +1,5 @@
+''' Analyze the effects of variants on the proteome '''
+
 from utils import ROOT
 from utils.lib import itertools, pd, np
 from utils.vnt import dtypes, vnt_dbs
@@ -29,8 +31,8 @@ def get_proteome_effects(db:str):
     phase = scens["phase"].values
 
     # amino acid transitions
-    tsn_ref = list(zip(*[get_tsn(up=u, motif=m, down=d, phase=p, na0=False) for u,m,d,p in zip(up, ref, down, phase)]))
-    tsn_alt = list(zip(*[get_tsn(up=u, motif=m, down=d, phase=p, na0=False) for u,m,d,p in zip(up, alt, down, phase)]))
+    tsn_ref = list(zip(*[get_tsn(up=u, motif=m, down=d, phase=p) for u,m,d,p in zip(up, ref, down, phase)]))
+    tsn_alt = list(zip(*[get_tsn(up=u, motif=m, down=d, phase=p) for u,m,d,p in zip(up, alt, down, phase)]))
 
     for tr,ta,n in zip(tsn_ref, tsn_alt, TSNS):
         scens[f"{n}_ref"] = tr
@@ -49,10 +51,6 @@ def get_proteome_effects(db:str):
 
     # save DataFrame
     scens.to_csv(f"{ROOT}/variants/found/{db}_nagnag_vnt_scenarios.txt", sep="\t", index=True)
-
-    print(scens)
-
-    print(f" - {db.replace("_", " ")}")
 
 # --- Proteome Effect Frequencies --- #
 
@@ -224,8 +222,8 @@ def count_transitions(db:str=None):
 
     ''' Find the frequencies of NAGNAG transitions
     
-    src: 
-    * reference: `sites/nagnag_scenarios.txt`
+    **Source:** 
+    * reference: `sites/nagnag_scens.txt`
     * variant: `variants/found/{db}_nagnag_vnt_scenarios.txt`
 
     EXP columns:
@@ -237,24 +235,21 @@ def count_transitions(db:str=None):
     * variant: "num", "num_created", "num_altered_ref", "num_altered_alt", "num_destroyed",
            "prop", "prop_created", "prop_altered_ref", "prop_altered_alt", "prop_destroyed"
 
+    `variants/proteome/{nagnag/db}_vc.txt`
+    --------------------------------------
     variable codons
-    * filepaths:
-        * reference: `scenarios/nagnag_vc.txt`
-        * variant: `scenarios/{db}_vc.txt`
     * index: "phase" (0-3), "vc_ps", "vc_ds"
     * columns: "aa_ps", "aa_ds", "aatype", EXP, OUT, FREQ
 
-    amino acid transitions:
-    * filepaths:
-        * reference: `scenarios/nagnag_aat.txt`
-        * variant: `scenarios/{db}_aat.txt`
+    `variants/proteome/{nagnag/db}_aat.txt`
+    ---------------------------------------
+    amino acid transitions
     * index: "phase" (0-3), "aa_ps", "aa_ds"
     * columns: "num_vc", "prop_vc", "aatype", EXP, OUT, FREQ
 
-    amino acid transition types:
-    * filepaths:
-        * reference: `scenarios/nagnag_aatt.txt`
-        * variant: `scenarios/{db}_aatt.txt`
+    `variants/proteome/{nagnag/db}_aatt.txt`
+    ----------------------------------------
+    amino acid transition types
     * index: "phase" (0-2), "aatype"
     * columns: "num_vc", "prop_vc", "num_aat", "prop_aat", EXP, OUT, FREQ
     '''
@@ -264,20 +259,20 @@ def count_transitions(db:str=None):
         src = f"{ROOT}/variants/fount/{db}_nagnag_vnt_scenarios.txt"
         vc_cols = ["vc_ps_ref", "vc_ps_alt", "vc_ds_ref", "vc_ds_alt"]
         
-        dst_vc = f"{ROOT}/scenarios/{db}_vc.txt"
-        dst_aat = f"{ROOT}/scenarios/{db}_aat.txt"
-        dst_aatt = f"{ROOT}/scenarios/{db}_aatt.txt"
+        dst_vc = f"{ROOT}/variants/proteome/{db}_vc.txt"
+        dst_aat = f"{ROOT}/variants/proteome/{db}_aat.txt"
+        dst_aatt = f"{ROOT}/variants/proteome/{db}_aatt.txt"
         
         exp_col = ["exp_stoch", "exp_splice"]
         freq_col = ["num", "num_created", "num_altered_ref", "num_altered_alt", "num_destroyed",
                     "prop", "prop_created", "prop_altered_ref", "prop_altered_alt", "prop_destroyed"]
     else:
-        src = f"{ROOT}/sites/nagnag_scenarios.txt"
+        src = f"{ROOT}/sites/nagnag_scens.txt"
         vc_cols = ["vc_ps", "vc_ds"]
         
-        dst_vc = f"{ROOT}/scenarios/nagnag_vc.txt"
-        dst_aat = f"{ROOT}/scenarios/nagnag_aat.txt"
-        dst_aatt = f"{ROOT}/scenarios/nagnag_aatt.txt"
+        dst_vc = f"{ROOT}/variants/proteome/nagnag_vc.txt"
+        dst_aat = f"{ROOT}/variants/proteome/nagnag_aat.txt"
+        dst_aatt = f"{ROOT}/variants/proteome/nagnag_aatt.txt"
 
         exp_col = ["exp_stoch", "exp_splice", "exp_as", "exp_ps", "exp_ds"]
         freq_col = ["num", "num_as", "num_ps", "num_ds", "prop", "prop_as", "prop_ps", "prop_ds"]
@@ -333,9 +328,6 @@ def count_transitions(db:str=None):
         vc["prop_ps"] = [x / vc.loc[p]["num_ps"].sum() for p in range(4) for x in vc.loc[p]["num_ps"]]
         vc["prop_ds"] = [x / vc.loc[p]["num_ds"].sum() for p in range(4) for x in vc.loc[p]["num_ds"]]
     
-    print("\n===== Variable Codons =====")
-    print(vc)
-
     # save
     vc.to_csv(dst_vc, sep="\t")
 
@@ -349,14 +341,9 @@ def count_transitions(db:str=None):
     agg.update({col : "sum" for col in ["num_vc", "prop_vc"] + exp_col})
     agg.update({col : (lambda ser: ser.iloc[0]) for col in OUT})
     agg.update({col : "sum" for col in freq_col})
-    
-    aat_phase = [v.groupby(["phase", "aa_ps", "aa_ds"]).aggregate(agg) for v in vc_phase]
-    aat = pd.concat(aat_phase)
 
-    print("\n===== Amino Acid Transitions =====")
-    print(aat)
-
-    # save
+    # DataFrame
+    aat = pd.concat([v.groupby(["phase", "aa_ps", "aa_ds"]).aggregate(agg) for v in vc_phase])
     aat.to_csv(dst_aat, sep="\t")
 
     # Amino Acid Transition Types
@@ -368,31 +355,23 @@ def count_transitions(db:str=None):
     agg = {col : "sum" for col in ["num_vc", "prop_vc", "num_aat", "prop_aat"] + exp_col}
     agg.update({col : (lambda ser: ser.iloc[0]) for col in OUT})
     agg.update({col : "sum" for col in freq_col})
-    
-    aat0 = aat.loc[0].drop(columns=["aatype", "phase"])
-    aat0.index = pd.MultiIndex.from_product([[0], aat0.index.get_level_values(0)], names=["phase", "aatype"])
-    aatt_phase = [a.groupby(["phase", "aatype"]).aggregate(agg) for a in aat_phase]
-    aatt = pd.concat([aat0] + aatt_phase).reindex([(0,i) for i in ["E", "Q", "K", "*"]] + list(itertools.product([1,2], ["DID", "NID", "CID", "IDR", "NC", "ET"])))
 
-    # save
+    # DataFrame    
+    aatt = pd.concat([a.groupby(["phase", "aatype"]).aggregate(agg) for a in aat_phase])
+    aatt.index = pd.MultiIndex.from_tuples([(0,i) for i in ["E", "Q", "K", "*"]] + list(itertools.product([1,2], ["DID", "NID", "CID", "IDR", "NC", "ET"])))
     aatt.to_csv(dst_aatt, sep="\t")
-
-    print("\n===== Amino Acid Transition Types =====")
-    print(aatt)
 
 # Count inserted/deleted amino acids
 def count_outcomes(db:str=None):
 
     ''' Find the frequencies of amino acid outcomes
     
-    src: 
-    * reference: `scenarios/nagnag_vc.txt`
-    * variant: `scenarios/{db}_vc.txt`
+    **Source:** 
+    * reference: `variants/proteome/nagnag_vc.txt`
+    * variant: `variants/proteome/{db}_vc.txt`
 
-    dst:
-    * filepaths:
-        * reference: `scenarios/nagnag_outcomes.txt`
-        * variant: `scenarios/{db}_outcomes.txt`
+    `variants/proteome/{nagnag/db}_outcomes.txt`
+    --------------------------------------------
     * index: phase (0-3), cat ("ins", "del"), aa
     * columns:
         * reference: "exp_stoch", "exp_splice", "exp_as", "exp_ps", "exp_ds",
@@ -404,14 +383,14 @@ def count_outcomes(db:str=None):
 
     # define {src}, {dst}, and {columns}
     if db:
-        src = f"{ROOT}/scenarios/{db}_vc.txt"
-        dst = f"{ROOT}/scenarios/{db}_outcomes.txt"
+        src = f"{ROOT}/variants/proteome/{db}_vc.txt"
+        dst = f"{ROOT}/variants/proteome/{db}_outcomes.txt"
 
         columns = ["exp_stoch", "exp_splice", "num", "num_created", "num_altered_ref", "num_altered_alt", "num_destroyed",
                    "prop", "prop_created", "prop_altered_ref", "prop_altered_alt", "prop_destroyed"]
     else:
-        src = f"{ROOT}/scenarios/nagnag_vc.txt"
-        dst = f"{ROOT}/scenarios/nagnag_outcomes.txt"
+        src = f"{ROOT}/variants/proteome/nagnag_vc.txt"
+        dst = f"{ROOT}/variants/proteome/nagnag_outcomes.txt"
 
         columns = ["exp_stoch", "exp_splice", "exp_as", "exp_ps", "exp_ds",
                    "num", "num_as", "num_ps", "num_ds", "prop", "prop_as", "prop_ps", "prop_ds"]
@@ -433,9 +412,6 @@ def count_outcomes(db:str=None):
                       index=pd.MultiIndex.from_tuples(index, names=["phase", "cat", "aa"]))
     df.to_csv(dst, sep="\t")
 
-    print("\n===== Outcomes =====")
-    print(df)
-
 # --- Run --- #
 
 def analyze_db(db:str=None):
@@ -447,5 +423,6 @@ def analyze_db(db:str=None):
     print(f" - {db.replace("_", " ") if db else "hg38 reference"}")
 
 print("calculating and counting variant proteomic effects...")
+analyze_db()
 [analyze_db(db) for db in vnt_dbs]
 print("done")

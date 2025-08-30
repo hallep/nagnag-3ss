@@ -4,23 +4,23 @@
 mkdir -p src
 
 # NCBI RefSeq Data
-wget -o src/ncbiRefSeq.txt.gz https://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/ncbiRefSeq.txt.gz
+wget -O src/ncbiRefSeq.txt.gz https://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/ncbiRefSeq.txt.gz
 gunzip src/ncbiRefSeq.txt.gz
 echo "NCBI RefSeq transcripts downloaded"
 
 # Chromosome Sequences
-wget -o src/hg38.fa.gz https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz
+wget -O src/hg38.fa.gz https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz
 gunzip src/hg38.fa.gz
 echo "GRCh38/hg38 chromosome sequences downloaded"
 python scripts/data.py
 
 # dbSNP Variants
-wget -o src/dbSNP.vcf.gz https://ftp.ncbi.nih.gov/snp/organisms/human_9606_b151_GRCh38p7/VCF/00-All.vcf.gz
+wget -O src/dbSNP.vcf.gz https://ftp.ncbi.nih.gov/snp/organisms/human_9606_b151_GRCh38p7/VCF/00-All.vcf.gz
 gunzip src/dbSNP.vcf.gz
 echo "dbSNP variants downloaded"
 
 # ClinVar Variants
-wget -o src/ClinVar.vcf.gz https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/clinvar.vcf.gz
+wget -O src/ClinVar.vcf.gz https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/clinvar.vcf.gz
 gunzip src/ClinVar.vcf.gz
 echo "ClinVar variants downloaded"
 
@@ -57,5 +57,5 @@ python scripts/find_variants.py
 mkdir -p variants/stats
 python scripts/count_variants.py
 
-mkdir -p scenarios
-python scripts/scenarios.py
+mkdir -p variants/proteome
+python scripts/analyze_variants.py
