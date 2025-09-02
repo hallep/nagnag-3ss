@@ -7,7 +7,7 @@
 * NAGNAG splice scenario phases (`stats/nagnag_scen_phase_freq.txt`)
 '''
 
-from utils import ROOT
+from utils import ROOT, run
 from utils.lib import itertools, pd, np, proportions_ztest
 from utils.seq import N
 
@@ -30,8 +30,6 @@ def ss_type_freq():
     * **prop_scen** (*float*): proportion of splice scenarios of each type
     '''
     
-    print(" - 3' splice site types")
-
     # load splice sites
     ssites = pd.read_csv(f"{ROOT}/sites/3ss.txt", sep="\t", index_col=0)
     ssites = ssites[ssites["uppercase"] == 1]
@@ -79,8 +77,6 @@ def exp_obs_nagnag_freq():
     * **p** (*float*): p-value in 1-proportion 2-sided z-test
     '''
 
-    print(" - expected NAGNAG frequency...")
-
     # load splice sites
     ssites = pd.read_csv(f"{ROOT}/sites/3ss.txt", sep="\t", index_col=0)
     ssites = ssites[(ssites["uppercase"] == 1)]
@@ -117,8 +113,6 @@ def canon_1nag_motif_freq():
     * **num_scen** (*int*): number of 1-NAG splice scenarios of each motif
     * **prop_scen** (*float*): proportion of 1-NAG splice scenarios of each motif
     '''
-
-    print(" - 1-NAG motifs")
 
     # load splice sites
     ssites = pd.read_csv(f"{ROOT}/sites/3ss.txt", sep="\t", index_col=0)
@@ -160,8 +154,6 @@ def nagnag_motif_freq():
         proportion of all, proximally-, distally-, and alternatively-spliced NAGNAGs (respectively) of each motif
     '''
 
-    print(" - NAGNAG motifs")
-
     # load splice sites
     ssites = pd.read_csv(f"{ROOT}/sites/nagnag_3ss.txt", sep="\t", index_col=0, dtype={"csite_pos":"str"})
     
@@ -199,8 +191,6 @@ def nagnag_splice_type_freq():
     * **num_scen** (*int*): number of NAGNAG splice scenarios of each splice type
     * **prop_scen** (*float*): proportion of NAGNAG splice scenarios of each splice type
     '''
-
-    print(" - NAGNAG splice types")
 
     # load splice sites and scenarios
     ssites = pd.read_csv(f"{ROOT}/sites/nagnag_3ss.txt", sep="\t", index_col=0)
@@ -245,8 +235,6 @@ def nagnag_scen_phase_freq():
     * **prop_CDS** (*float*): proportion of coding sequence NAGNAG splice scenarios in each phase
     '''
 
-    print(" - NAGNAG splice scenario phases")
-
     # load splice scenarios
     scens = pd.read_csv(f"{ROOT}/sites/nagnag_scens.txt", sep="\t", index_col=0)
 
@@ -263,17 +251,15 @@ def nagnag_scen_phase_freq():
         "prop" : count / sum(count[:-1]),
         "prop_CDS" : [np.NaN] + list(count[1:-1] / sum(count[1:-1])) + [1]
     }).set_index(keys="phase", inplace=False)
-    df.to_csv("stats/nagnag_scen_phase_count.txt", sep="\t")
+    df.to_csv("stats/nagnag_scen_phase_freq.txt", sep="\t")
 
 print("computing frequency statistics...")
 
-ss_type_freq()
-exp_obs_nagnag_freq()
+run(ss_type_freq, desc="3' splice site types", sub=True)
+run(exp_obs_nagnag_freq, desc="expected NAGNAG frequency", sub=True)
 
-canon_1nag_motif_freq()
-nagnag_motif_freq()
+run(canon_1nag_motif_freq, desc="1-NAG motifs", sub=True)
+run(nagnag_motif_freq, desc="NAGNAG motifs", sub=True)
 
-nagnag_splice_type_freq()
-nagnag_scen_phase_freq()
-
-print("done")
+run(nagnag_splice_type_freq, desc="NAGNAG splice types", sub=True)
+run(nagnag_scen_phase_freq, desc="NAGNAG splice scenario phases", sub=True)

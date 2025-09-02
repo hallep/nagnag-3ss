@@ -7,7 +7,7 @@
 * NAGNAG splice scenario phases (`stats/nagnag_scen_phase_freq.txt`)
 '''
 
-from utils import ROOT
+from utils import ROOT, run
 from utils.lib import subprocess, progress_map, pd, np
 from utils.seq import CHROMS
 from utils.vnt import dtypes, vnt_dbs
@@ -29,8 +29,6 @@ def count_sites():
     * columns: "dbSNP_common", "dbSNP_rare", "ClinVar", "HGMD_splice
     * rows: "3ss", "nagnag", "1off", "canon"
     '''
-
-    print(" - variant-affected sites")
 
     # load sites
     ss3 = [pd.read_csv(f"{ROOT}/variants/affecting/{db}_3ss_vnt_containing_ssites.txt", sep="\t") for db in vnt_dbs]
@@ -65,8 +63,6 @@ def count_vnts():
     * columns: "dbSNP_common", "dbSNP_rare", "ClinVar", "HGMD_splice
     * rows: "3ss", "nagnag", "create", "alter", "destroy"
     '''
-
-    print(" - variants")
 
     # load variants
     ss3 = [pd.read_csv(f"{ROOT}/variants/affecting/{db}_3ss_vnts.txt", sep="\t", dtype=dtypes) for db in vnt_dbs]
@@ -113,8 +109,6 @@ def count_events_scens():
     * columns: "nc", "p0", "p1", "p2", "cds", "all"
     '''
 
-    print(" - events and scenarios by variant effect")
-
     # load variant events + scenarios
     events = {db : pd.read_csv(f"{ROOT}/variants/found/{db}_nagnag_vnt_events.txt",
                                sep="\t", index_col=0, dtype=dtypes) for db in vnt_dbs}
@@ -139,8 +133,6 @@ def count_events_scens():
               sep="\t", index_label=["type", "effect"])
 
     # by phase
-    print(" - scenarios by phase")
-
     effects = ["CREATE", "ALTER", "DESTROY"]
     phases = [-1, 0, 1, 2]
 
@@ -182,8 +174,6 @@ def count_affected_bases():
     columns: "N1", "A1", "G1", "N2", "A2", "G2"
     '''
 
-    print(" - variant-affected base")
-
     # load variant events
     events = [pd.read_csv(f"{ROOT}/variants/found/{db}_nagnag_vnt_events.txt", sep="\t", index_col=0, dtype=dtypes) for db in vnt_dbs]
 
@@ -201,7 +191,6 @@ def count_affected_bases():
     mpos = {0 : "N1", 1 : "A1", 2 : "G1", 3 : "N2", 4 : "A2", 5 : "G2"}
     [(e, mpos[p]) for e,pos in poss.items() for p in pos]
 
-
     # DataFrame
     df = pd.DataFrame(counts, index=pd.MultiIndex.from_tuples([(e, mpos[p])
                                                                for e,pos in poss.items() for p in pos],
@@ -210,11 +199,11 @@ def count_affected_bases():
     df.to_csv(f"{ROOT}/variants/stats/affected_base_freq.txt", sep="\t")
 
 print("computing variant frequency statistics...")
-count_sites()
-count_vnts()
-count_events_scens()
-count_affected_bases()
-print("done")
+
+run(count_sites, desc="variant-affected sites", sub=True)
+run(count_vnts, desc="variants", sub=True)
+run(count_events_scens, desc="events and scenarios by variant effect", sub=True)
+run(count_affected_bases, desc="variant-affected base", sub=True)
 
 # dbSNP Common: 33,629,539
 # dbSNP Rare: 56,354,5478

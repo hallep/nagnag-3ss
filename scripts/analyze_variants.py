@@ -144,7 +144,7 @@ def get_possible_vc(phase_freq:tuple[int, int, int]=[1,1,1]) -> pd.DataFrame:
     vc : pandas.DataFrame
         all possible variable codons in phases 0, 1, 2, and all
         * index: "phase", "vc_ps", "vc_ds"
-        * columns: "aa_ps", "aa_ds", "aatype", "exp_stoch", "exp_splice", "exp_ps", "exp_ds", "exp_as", {BIN}, {CAT}
+        * columns: "aa_ps", "aa_ds", "aattype", "exp_stoch", "exp_splice", "exp_ps", "exp_ds", "exp_as", {BIN}, {CAT}
     '''
 
     # PHASE 0
@@ -155,7 +155,7 @@ def get_possible_vc(phase_freq:tuple[int, int, int]=[1,1,1]) -> pd.DataFrame:
         "vc_ds" : vc_ds,
         "aa_ps" : aa_ps,
         "aa_ds" : aa_ds,
-        "aatype" : aattype,
+        "aattype" : aattype,
         "exp_stoch" : vc_weight(phase=0, wsource=0, stype="all"),
         "exp_splice" : vc_weight(phase=0, wsource=1, stype="all"),
         "exp_ps" : vc_weight(phase=0, wsource=1, stype="PS"),
@@ -174,7 +174,7 @@ def get_possible_vc(phase_freq:tuple[int, int, int]=[1,1,1]) -> pd.DataFrame:
         "vc_ds" : vc_ds,
         "aa_ps" : aa_ps,
         "aa_ds" : aa_ds,
-        "aatype" : aattype,
+        "aattype" : aattype,
         "exp_stoch" : vc_weight(phase=1, wsource=0, stype="all"),
         "exp_splice" : vc_weight(phase=1, wsource=[1, 1, 1, 1], stype="all"),
         "exp_ps" : vc_weight(phase=1, wsource=[1, 1, 1, 1], stype="PS"),
@@ -190,7 +190,7 @@ def get_possible_vc(phase_freq:tuple[int, int, int]=[1,1,1]) -> pd.DataFrame:
         "vc_ds" : vc_ds,
         "aa_ps" : aa_ps,
         "aa_ds" : aa_ds,
-        "aatype" : aattype,
+        "aattype" : aattype,
         "exp_stoch" : vc_weight(phase=2, wsource=0, stype="all"),
         "exp_splice" : vc_weight(phase=2, wsource=[1, 1, 1, 1], stype="all"),
         "exp_ps" : vc_weight(phase=2, wsource=[1, 1, 1, 1], stype="PS"),
@@ -201,8 +201,8 @@ def get_possible_vc(phase_freq:tuple[int, int, int]=[1,1,1]) -> pd.DataFrame:
     # add amino acid outcomes
     for df in [p0, p1, p2]:
         outcomes = zip(*[get_categorical_outcomes(p, ps, ds) for p,ps,ds in zip(df["phase"], df["aa_ps"], df["aa_ds"])])
-        for n,c in zip(OUT, outcomes):
-            df[n] = c
+        for i,(n,c) in enumerate(zip(OUT, outcomes)):
+            df.insert(loc=i+6, column=n, value=c)
 
     # COMBINED
     p3 = pd.concat([p0, p1, p2])
@@ -232,31 +232,31 @@ def count_transitions(db:str=None):
 
     FREQ columns:
     * reference: "num", "num_as", "num_ps", "num_ds", "prop", "prop_as", "prop_ps", "prop_ds"
-    * variant: "num", "num_created", "num_altered_ref", "num_altered_alt", "num_destroyed",
-           "prop", "prop_created", "prop_altered_ref", "prop_altered_alt", "prop_destroyed"
+    * variant: "num", "num_create", "num_alter_ref", "num_alter_alt", "num_destroy",
+           "prop", "prop_create", "prop_alter_ref", "prop_alter_alt", "prop_destroy"
 
     `variants/proteome/{nagnag/db}_vc.txt`
     --------------------------------------
     variable codons
     * index: "phase" (0-3), "vc_ps", "vc_ds"
-    * columns: "aa_ps", "aa_ds", "aatype", EXP, OUT, FREQ
+    * columns: "aa_ps", "aa_ds", "aattype", "ins_aa", "del_aa", EXP, FREQ
 
     `variants/proteome/{nagnag/db}_aat.txt`
     ---------------------------------------
     amino acid transitions
     * index: "phase" (0-3), "aa_ps", "aa_ds"
-    * columns: "num_vc", "prop_vc", "aatype", EXP, OUT, FREQ
+    * columns: "num_vc", "prop_vc", "aattype", "ins_aa", "del_aa", EXP, FREQ
 
     `variants/proteome/{nagnag/db}_aatt.txt`
     ----------------------------------------
     amino acid transition types
-    * index: "phase" (0-2), "aatype"
-    * columns: "num_vc", "prop_vc", "num_aat", "prop_aat", EXP, OUT, FREQ
+    * index: "phase" (0-2), "aattype"
+    * columns: "num_vc", "prop_vc", "num_aat", "prop_aat", "ins_aa", "del_aa", EXP, FREQ
     '''
 
     # define {src}, {vc_cols}, {dst_vc}, {dst_aat}, {dst_aatt}, {exp_col}, and {freq_col}
     if db:
-        src = f"{ROOT}/variants/fount/{db}_nagnag_vnt_scenarios.txt"
+        src = f"{ROOT}/variants/found/{db}_nagnag_vnt_scenarios.txt"
         vc_cols = ["vc_ps_ref", "vc_ps_alt", "vc_ds_ref", "vc_ds_alt"]
         
         dst_vc = f"{ROOT}/variants/proteome/{db}_vc.txt"
@@ -264,8 +264,8 @@ def count_transitions(db:str=None):
         dst_aatt = f"{ROOT}/variants/proteome/{db}_aatt.txt"
         
         exp_col = ["exp_stoch", "exp_splice"]
-        freq_col = ["num", "num_created", "num_altered_ref", "num_altered_alt", "num_destroyed",
-                    "prop", "prop_created", "prop_altered_ref", "prop_altered_alt", "prop_destroyed"]
+        freq_col = ["num", "num_create", "num_alter_ref", "num_alter_alt", "num_destroy",
+                    "prop", "prop_create", "prop_alter_ref", "prop_alter_alt", "prop_destroy"]
     else:
         src = f"{ROOT}/sites/nagnag_scens.txt"
         vc_cols = ["vc_ps", "vc_ds"]
@@ -303,18 +303,18 @@ def count_transitions(db:str=None):
     # counts and proportions
     if db:
         # counts
-        vc["num_created"] = [svcs.count(("CREATE",p,d)) for svcs,vcs in zip(scen_alt, codons) for p,d in vcs]
-        vc["num_altered_ref"] = [svcs.count(("ALTER",p,d)) for svcs,vcs in zip(scen_ref, codons) for p,d in vcs]
-        vc["num_altered_alt"] = [svcs.count(("ALTER",p,d)) for svcs,vcs in zip(scen_alt, codons) for p,d in vcs]
-        vc["num_destroyed"] = [svcs.count(("DESTROY",p,d)) for svcs,vcs in zip(scen_ref, codons) for p,d in vcs]
-        vc.insert(loc=len(vc.columns)-3, column="num", value=vc["num_created"] + vc["num_altered_ref"] + vc["num_altered_alt"] + vc["num_destroyed"])
+        vc["num_create"] = [svcs.count(("CREATE",p,d)) for svcs,vcs in zip(scen_alt, codons) for p,d in vcs]
+        vc["num_alter_ref"] = [svcs.count(("ALTER",p,d)) for svcs,vcs in zip(scen_ref, codons) for p,d in vcs]
+        vc["num_alter_alt"] = [svcs.count(("ALTER",p,d)) for svcs,vcs in zip(scen_alt, codons) for p,d in vcs]
+        vc["num_destroy"] = [svcs.count(("DESTROY",p,d)) for svcs,vcs in zip(scen_ref, codons) for p,d in vcs]
+        vc.insert(loc=len(vc.columns)-3, column="num", value=vc["num_create"] + vc["num_alter_ref"] + vc["num_alter_alt"] + vc["num_destroy"])
         
         # proportions
         vc["prop"] = [x / vc.loc[p]["num"].sum() for p in range(4) for x in vc.loc[p]["num"]]
-        vc["prop_created"] = [x / vc.loc[p]["num_created"].sum() for p in range(4) for x in vc.loc[p]["num_created"]]
-        vc["prop_altered_ref"] = [x / vc.loc[p]["num_altered_ref"].sum() for p in range(4) for x in vc.loc[p]["num_altered_ref"]]
-        vc["prop_altered_alt"] = [x / vc.loc[p]["num_altered_alt"].sum() for p in range(4) for x in vc.loc[p]["num_altered_alt"]]
-        vc["prop_destroyed"] = [x / vc.loc[p]["num_destroyed"].sum() for p in range(4) for x in vc.loc[p]["num_destroyed"]]
+        vc["prop_create"] = [x / vc.loc[p]["num_create"].sum() for p in range(4) for x in vc.loc[p]["num_create"]]
+        vc["prop_alter_ref"] = [x / vc.loc[p]["num_alter_ref"].sum() for p in range(4) for x in vc.loc[p]["num_alter_ref"]]
+        vc["prop_alter_alt"] = [x / vc.loc[p]["num_alter_alt"].sum() for p in range(4) for x in vc.loc[p]["num_alter_alt"]]
+        vc["prop_destroy"] = [x / vc.loc[p]["num_destroy"].sum() for p in range(4) for x in vc.loc[p]["num_destroy"]]
     else:
         # counts
         vc["num_ps"] = [svcs.count(("PS",p,d)) for svcs,vcs in zip(scen_vc, codons) for p,d in vcs]
@@ -337,10 +337,8 @@ def count_transitions(db:str=None):
     vc.insert(loc=4, column="prop_vc", value=[1/len(vc.loc[p]) for p in range(4) for _ in range(len(vc.loc[p]))])
     vc_phase = [vc.loc[p] for p in range(4)]
 
-    agg = {"aatype" : (lambda ser: ser.iloc[0])}
-    agg.update({col : "sum" for col in ["num_vc", "prop_vc"] + exp_col})
-    agg.update({col : (lambda ser: ser.iloc[0]) for col in OUT})
-    agg.update({col : "sum" for col in freq_col})
+    agg = {col : (lambda ser: ser.iloc[0]) for col in ["aattype"] + OUT}
+    agg.update({col : "sum" for col in ["num_vc", "prop_vc"] + exp_col + freq_col})
 
     # DataFrame
     aat = pd.concat([v.groupby(["phase", "aa_ps", "aa_ds"]).aggregate(agg) for v in vc_phase])
@@ -352,13 +350,11 @@ def count_transitions(db:str=None):
     aat.insert(loc=4, column="prop_aat", value=[1/len(aat.loc[p]) for p in range(4) for _ in range(len(aat.loc[p]))])
     aat_phase = [aat.loc[p] for p in [0,1,2]]
 
-    agg = {col : "sum" for col in ["num_vc", "prop_vc", "num_aat", "prop_aat"] + exp_col}
-    agg.update({col : (lambda ser: ser.iloc[0]) for col in OUT})
-    agg.update({col : "sum" for col in freq_col})
+    agg = {col : (lambda ser: ser.iloc[0]) for col in OUT}
+    agg.update({col : "sum" for col in ["num_vc", "prop_vc", "num_aat", "prop_aat"] + exp_col + freq_col})
 
     # DataFrame    
-    aatt = pd.concat([a.groupby(["phase", "aatype"]).aggregate(agg) for a in aat_phase])
-    aatt.index = pd.MultiIndex.from_tuples([(0,i) for i in ["E", "Q", "K", "*"]] + list(itertools.product([1,2], ["DID", "NID", "CID", "IDR", "NC", "ET"])))
+    aatt = pd.concat([a.groupby(["phase", "aattype"]).aggregate(agg) for a in aat_phase])
     aatt.to_csv(dst_aatt, sep="\t")
 
 # Count inserted/deleted amino acids
@@ -377,8 +373,8 @@ def count_outcomes(db:str=None):
         * reference: "exp_stoch", "exp_splice", "exp_as", "exp_ps", "exp_ds",
                      "num", "num_as", "num_ps", "num_ds", "prop", "prop_as", "prop_ps", "prop_ds"
         * variant: "exp_stoch", "exp_splice", 
-                   "num", "num_created", "num_altered_ref", "num_altered_alt", "num_destroyed",
-                   "prop", "prop_created", "prop_altered_ref", "prop_altered_alt", "prop_destroyed"
+                   "num", "num_create", "num_alter_ref", "num_alter_alt", "num_destroy",
+                   "prop", "prop_create", "prop_alter_ref", "prop_alter_alt", "prop_destroy"
     '''
 
     # define {src}, {dst}, and {columns}
@@ -386,8 +382,8 @@ def count_outcomes(db:str=None):
         src = f"{ROOT}/variants/proteome/{db}_vc.txt"
         dst = f"{ROOT}/variants/proteome/{db}_outcomes.txt"
 
-        columns = ["exp_stoch", "exp_splice", "num", "num_created", "num_altered_ref", "num_altered_alt", "num_destroyed",
-                   "prop", "prop_created", "prop_altered_ref", "prop_altered_alt", "prop_destroyed"]
+        columns = ["exp_stoch", "exp_splice", "num", "num_create", "num_alter_ref", "num_alter_alt", "num_destroy",
+                   "prop", "prop_create", "prop_alter_ref", "prop_alter_alt", "prop_destroy"]
     else:
         src = f"{ROOT}/variants/proteome/nagnag_vc.txt"
         dst = f"{ROOT}/variants/proteome/nagnag_outcomes.txt"
@@ -412,17 +408,76 @@ def count_outcomes(db:str=None):
                       index=pd.MultiIndex.from_tuples(index, names=["phase", "cat", "aa"]))
     df.to_csv(dst, sep="\t")
 
+# --- Combine Databases --- #
+
+def consolidate_effects(suffix:str, n_index:int, n_cols:int, metric:str):
+
+    ''' Combine reference and variant proteome effects
+    
+    **Source:** 
+    * reference: `variants/proteome/nagnag_{suffix}.txt`
+    * variant: `variants/proteome/{db}_{suffix}.txt`
+
+    `variants/proteome/{metric}_freq.txt`
+    -------------------------------------
+    * rows: from `nagnag_{suffix}.txt` (first `n_index` columns)
+    * columns: first `n_cols` columns of `nagnag_{suffix}.txt`,
+    "exp_stoch", "exp_splice", "exp_ps", "exp_ds", "exp_as",
+    "ref", "ref_ps", "ref_ds", "ref_as",
+    "{db}_create", "{db}_alter_ref", "{db}_alter_alt", "{db}_destroy"
+
+    `variants/proteome/{metric}_freq_count.txt`
+    -------------------------------------
+    * rows: from `nagnag_{suffix}.txt` (first `n_index` columns)
+    * columns: first `n_cols` columns of `nagnag_{suffix}.txt`,
+    "ref", "ref_ps", "ref_ds", "ref_as",
+    "{db}_create", "{db}_alter_ref", "{db}_alter_alt", "{db}_destroy"
+    '''
+
+    # load frequencies
+    ref = pd.read_csv(f"{ROOT}/variants/proteome/nagnag_{suffix}.txt" , sep="\t", index_col=list(range(n_index)))
+    vnt = {db : pd.read_csv(f"{ROOT}/variants/proteome/{db}_{suffix}.txt", sep="\t", index_col=list(range(n_index))) for db in vnt_dbs}
+
+    # DataFrames: count, proportions
+    dfC = ref.iloc[:, :n_cols].copy()
+    dfP = ref.iloc[:, :n_cols+5].copy()
+
+    # reference frequencies
+    for s in ["", "_ps", "_ds", "_as"]:
+        dfC[f"ref{s}"] = ref[f"num{s}"]
+        dfP[f"ref{s}"] = ref[f"prop{s}"]
+
+    # variant frequencies
+    for db,df in vnt.items():
+        for s in ["", "_create", "_alter_ref", "_alter_alt", "_destroy"]:
+            dfC[f"{db}{s}"] = df[f"num{s}"]
+            dfP[f"{db}{s}"] = df[f"prop{s}"]
+
+    # save
+    dfC.to_csv(f"{ROOT}/variants/proteome/{metric}_freq.txt", sep="\t", index=True)
+    dfP.to_csv(f"{ROOT}/variants/proteome/{metric}_freq_count.txt", sep="\t", index=True)
+
 # --- Run --- #
 
 def analyze_db(db:str=None):
+
+    print(f" - {db.replace("_", " ") if db else "hg38 reference"}...", end="", flush=True)
+
     if db:
         get_proteome_effects(db)
-    count_transitions()
-    count_outcomes()
+    
+    count_transitions(db)
+    count_outcomes(db)
 
-    print(f" - {db.replace("_", " ") if db else "hg38 reference"}")
+    print("done")
 
 print("calculating and counting variant proteomic effects...")
 analyze_db()
 [analyze_db(db) for db in vnt_dbs]
+
+print("consolidating proteomic effects...", end="", flush=True)
+consolidate_effects(suffix="vc", n_index=3, n_cols=5, metric="variable_codons")
+consolidate_effects(suffix="aat", n_index=3, n_cols=5, metric="variable_amino_acids")
+consolidate_effects(suffix="aatt", n_index=2, n_cols=6, metric="variable_amino_acids")
+consolidate_effects(suffix="outcomes", n_index=3, n_cols=0, metric="amino_acid_outcomes")
 print("done")

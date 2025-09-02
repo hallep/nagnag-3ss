@@ -452,11 +452,6 @@ def process_nagnag_vnts(create_vnt_txt:str, alter_vnt_txt:str, destroy_vnt_txt:s
     events["scen_inds"] = [",".join(map(str, inds)) for inds in scen_inds.values()]
     events.to_csv(dst_event_txt, sep="\t", index=True)
 
-    # print(sites)
-    # print(vnts)
-    # print(events)
-    # print(scens)
-
 # --- Generalized Functions --- #
 
 # 3' Splice Sites
@@ -481,6 +476,8 @@ def find_nagnag_vnts(db:str):
     print(f"finding NAGNAG-affecting {db.replace("_", " ")} variants...")
     
     def by_effect(e:str):
+
+        print(f" - {e}")
 
         get_affecting_vnts(sfx=f"{e}_{db}", site_bed=SS[EFF[e].site_type].bed[DB[db].by_chrom],
                            vnt_bed=DB[db].bed, src_site_txt=SS[EFF[e].site_type].txt, dst_site_txt=None,

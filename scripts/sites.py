@@ -9,7 +9,7 @@ and extract splice sites, cleavage sites, and splice scenarios
 * `sites/nagnag_scens.txt`
 '''
 
-from utils import ROOT
+from utils import ROOT, run
 from utils.lib import pd
 from utils.seq import CHROMS, get_ss_seq, get_cs_seq, is_nag, get_sstype
 
@@ -51,8 +51,6 @@ def get_csites():
     * **csite_iflank_3ss** (*str*): last 100 bases of the intron (including csite_seq)
     * **csite_eflank_3ss** (*str*): first 100 bases of the downstream exon
     '''
-
-    print("extracting 3' cleavage sites...", end="", flush=True)
 
     # load transcript data table
     columns = ["bin", "name", "chrom", "strand", "txStart", "txEnd",
@@ -214,8 +212,6 @@ def get_csites():
     csites = pd.DataFrame(d)
     csites.to_csv(f"{ROOT}/sites/3cs.txt", sep="\t", index_label="index")
 
-    print("done")
-
 # Group cleavage sites
 def group_csites():
 
@@ -255,8 +251,6 @@ def group_csites():
     * **ssite_ind** (*int*): index of splice site in `3ss.txt`
     * **ssite_type** (*str*): splice site type, with information about number of trinucleotides and whether each is canonical (NAG)
     '''
-
-    print("identifying 3' splice sites...", end="", flush=True)
 
     canon_chroms = [f"chr{c}" for c in list(range(1,23)) + ["X", "Y", "M"]]
 
@@ -400,8 +394,6 @@ def group_csites():
     cleavage_sites["ssite_type"] = ss_type
     cleavage_sites.to_csv(f"{ROOT}/sites/3cs.txt", sep="\t", index=False)
 
-    print("done")
-
 # Isolate NAGNAGs
 def isolate_nagnags():
 
@@ -431,8 +423,6 @@ def isolate_nagnags():
         * *ASP*: alternative proximal
         * *ASD*: alternative distal
     '''
-
-    print("isolating NAGNAG 3' splice sites and cleavage sites...", end="", flush=True)
 
     # load sites
     ssites = pd.read_csv(f"{ROOT}/sites/3ss.txt", sep="\t")
@@ -500,8 +490,6 @@ def isolate_nagnags():
     nagnag_cs = csites.iloc[csite_inds]
     nagnag_cs.to_csv(f"{ROOT}/sites/nagnag_3cs.txt", sep="\t", index=False)
 
-    print("done")
-
 # Parse NAGNAG splice scenarios
 def parse_nagnag_scenarios():
 
@@ -552,8 +540,6 @@ def parse_nagnag_scenarios():
     ----------------------
     * **scen_ind** (*str*): comma-separated list, 1 for each scenario, of indices of associated splice scenarios in `nagnag_scens.txt`
     '''
-
-    print("extracting NAGNAG splice scenarios...", end="", flush=True)
 
     # load splice sites
     ssites = pd.read_csv(f"{ROOT}/sites/nagnag_3ss.txt", sep="\t", index_col=0)
@@ -661,9 +647,7 @@ def parse_nagnag_scenarios():
     csites["scen_inds"] = [",".join(map(str, inds)) for inds in scen_inds_cs.values()]
     csites.to_csv(f"{ROOT}/sites/nagnag_3cs.txt", sep="\t", index=True)
 
-    print("done")
-
-get_csites()
-group_csites()
-isolate_nagnags()
-parse_nagnag_scenarios()
+run(get_csites, desc="extracting 3' cleavage sites")
+run(group_csites, desc="identifying 3' splice sites")
+run(isolate_nagnags, desc="isolating NAGNAG 3' splice sites and cleavage sites")
+run(parse_nagnag_scenarios, desc="extracting NAGNAG splice scenarios")

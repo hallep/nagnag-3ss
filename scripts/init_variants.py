@@ -1,6 +1,6 @@
 ''' Identify all potential NAGNAGs and create .bed files for sites and variants '''
 
-from utils import ROOT
+from utils import ROOT, run
 from utils.lib import tqdm, re, pd
 from utils.seq import CHROMS, get_ss_seq
 from utils.vnt import txt_cols, vcf_cols, dtypes
@@ -32,8 +32,6 @@ def create_3ss_bed():
     same as `3ss.bed`, but split by chromosomes
     '''
 
-    print("creating 3ss.bed...", end="", flush=True)
-
     # load 3' splice sites
     ss3 = pd.read_csv(f"{ROOT}/sites/3ss.txt", sep="\t", index_col=0)
     ss3 = ss3[ss3["uppercase"] == 1]
@@ -61,8 +59,6 @@ def create_3ss_bed():
     for c in CHROMS:
         bed[bed["chrom"] == c].to_csv(f"{ROOT}/variants/bed/3ss_{c}.bed", sep="\t", index=False, header=False)
 
-    print("done")
-
 # Find 1-off NAGNAGs
 def identify_1off_nagnags():
 
@@ -79,8 +75,6 @@ def identify_1off_nagnags():
     * **off_pos** (*int*): position [0-5] of the "off" base within the motif
     * **off_coord** (*int*): 0-index genomic coordinate of the "off" base
     '''
-
-    print("identifying 1-off NAGNAGs...", end="", flush=True)
 
     # load splice sites
     ssites = pd.read_csv(f"{ROOT}/sites/3ss.txt", sep="\t", index_col=0)
@@ -254,8 +248,6 @@ def identify_1off_nagnags():
     })
     df.to_csv(f"{ROOT}/sites/1off_splice_sites.txt", sep="\t", index_label="index")
 
-    print("done")
-
 # Make .bed file for (potential) NAGNAGs
 def create_nagnag_1off_bed():
 
@@ -277,8 +269,6 @@ def create_nagnag_1off_bed():
     * **name** (*int*): index in `nagnag_3ss.txt`
     * **score** (*int*): relative position [0-5]
     '''
-
-    print("creating 1off.bed and canon.bed...", end="", flush=True)
 
     # 1-off NAGNAGs
     off = pd.read_csv(f"{ROOT}/sites/1off_splice_sites.txt", sep="\t", index_col=0, dtype=dtypes)
@@ -314,8 +304,6 @@ def create_nagnag_1off_bed():
     for c in CHROMS:
         bed[bed["chrom"] == c].to_csv(f"{ROOT}/variants/bed/canon_{c}.bed", sep="\t", index=False, header=False)
 
-    print("done")
-
 # --- Variants --- '''
 
 # format chromosome
@@ -350,9 +338,9 @@ def vcf2txt2bed(vcf:str, txt:str, bed:str, by_chrom:bool=False, split_freq:bool=
     * **strand** (*str*): always "." (unspecified)
     '''
 
-    if by_chrom:
+    print(f"converting {vcf.split("/")[-1]} to {txt.split("/")[-1]} and {bed.split("/")[-1]}...", end="", flush=True)
 
-        print(f"converting {vcf.split("/")[-1]} to {txt.split("/")[-1]} and {bed.split("/")[-1]}...")
+    if by_chrom:
 
         # open files
         if split_freq:
@@ -394,8 +382,6 @@ def vcf2txt2bed(vcf:str, txt:str, bed:str, by_chrom:bool=False, split_freq:bool=
         [f.close() for c in bed_files.values() for f in c.values()]
 
     else:
-
-        print(f"converting {vcf.split("/")[-1]} to {txt.split("/")[-1]} and {bed.split("/")[-1]}...", end="", flush=True)
 
         # .txt file
         df = pd.read_csv(vcf, sep="\t", comment="#", header=None, names=vcf_cols,
@@ -494,9 +480,9 @@ def sql2txt2bed(sql:str, txt:str, bed:str, coords:str):
 
 # --- Run --- #
 
-create_3ss_bed()
-identify_1off_nagnags()
-create_nagnag_1off_bed()
+run(create_3ss_bed, desc="creating 3ss.bed")
+run(identify_1off_nagnags, desc="identifying 1-off NAGNAGs")
+run(create_nagnag_1off_bed, desc="creating 1off.bed and canon.bed")
 
 vcf2txt2bed(vcf=f"{ROOT}/src/dbSNP.vcf", txt=f"{ROOT}/variants/src/dbSNP_$_#.txt",
             bed=f"{ROOT}/variants/bed/dbSNP_$_#.bed", by_chrom=True, split_freq=True)
