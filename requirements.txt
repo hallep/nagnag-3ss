@@ -1,6 +1,9 @@
+tqdm
+parallelbar
 pathlib
 biopython
 pandas
 numpy
 statsmodels
 matplotlib
+seqlogo

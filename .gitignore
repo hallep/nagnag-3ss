@@ -10,9 +10,12 @@ stats/
 proteome/
 figures/
 variants/
+app_data/
+data/
 
 # temporary files/folders
 *.ipynb
+app_data.py
 test.py
 temp.py
 test.sh

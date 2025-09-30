@@ -454,8 +454,8 @@ def consolidate_effects(suffix:str, n_index:int, n_cols:int, metric:str):
             dfP[f"{db}{s}"] = df[f"prop{s}"]
 
     # save
-    dfC.to_csv(f"{ROOT}/variants/proteome/{metric}_freq.txt", sep="\t", index=True)
-    dfP.to_csv(f"{ROOT}/variants/proteome/{metric}_freq_count.txt", sep="\t", index=True)
+    dfP.to_csv(f"{ROOT}/variants/proteome/{metric}_freq.txt", sep="\t", index=True)
+    dfC.to_csv(f"{ROOT}/variants/proteome/{metric}_freq_count.txt", sep="\t", index=True)
 
 # --- Run --- #
 
@@ -478,6 +478,6 @@ analyze_db()
 print("consolidating proteomic effects...", end="", flush=True)
 consolidate_effects(suffix="vc", n_index=3, n_cols=5, metric="variable_codons")
 consolidate_effects(suffix="aat", n_index=3, n_cols=5, metric="variable_amino_acids")
-consolidate_effects(suffix="aatt", n_index=2, n_cols=6, metric="variable_amino_acids")
+consolidate_effects(suffix="aatt", n_index=2, n_cols=6, metric="amino_acid_transitions")
 consolidate_effects(suffix="outcomes", n_index=3, n_cols=0, metric="amino_acid_outcomes")
 print("done")

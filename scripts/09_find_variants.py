@@ -270,7 +270,7 @@ def process_nagnag_vnts(create_vnt_txt:str, alter_vnt_txt:str, destroy_vnt_txt:s
     insts["alt_ind"] = insts.apply(lambda x: alt_ind(x), axis=1)
     insts["ref"] = insts.apply(lambda x: x["motif_seq"][int(x["vnt_pos"])], axis=1)
     insts["alt"] = insts.apply(lambda x: alt_allele(x), axis=1)
-    insts["vnt_motif"] = insts.apply(lambda x: x["motif_seq"][:int(x["vnt_pos"])] + x["ref"] + x["motif_seq"][int(x["vnt_pos"])+1:], axis=1)
+    insts["vnt_motif"] = insts.apply(lambda x: x["motif_seq"][:int(x["vnt_pos"])] + x["alt"] + x["motif_seq"][int(x["vnt_pos"])+1:], axis=1)
     
     insts.sort_values(by=["chrom", "motif_start", "strand", "vnt_coord", "vnt_effect"], ignore_index=True, inplace=True)
     insts.insert(loc=7, column="event_ind", value=insts.index)
@@ -502,5 +502,5 @@ def find_nagnag_vnts(db:str):
 
     print("done")
 
-# [find_3ss_vnts(db) for db in vnt_dbs]
-# [find_nagnag_vnts(db) for db in vnt_dbs]
+[find_3ss_vnts(db) for db in vnt_dbs]
+[find_nagnag_vnts(db) for db in vnt_dbs]
