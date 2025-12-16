@@ -1,9 +1,18 @@
 ''' Find splice site-affecting variants from dbSNP, ClinVar, and HGMD Splice '''
 
-from utils import ROOT
-from utils.lib import os, progress_map, progress_starmap, pd
+from lib import argparse, os, progress_map, progress_starmap, pd
+from utils import ROOT, log_script, log_fn
 from utils.seq import CHROMS
-from utils.vnt import dtypes, txt_cols, vnt_dbs, SS, DB, EFF, filter_effect
+from utils.vnt import dtypes, txt_cols, all_vnt_dbs, SS, DB, EFF, filter_effect
+
+# Variant Databases
+parser = argparse.ArgumentParser()
+parser.add_argument("-H", "--ignore-HGMD", action="store_true", help="Do not process/analyze HGMD Splice data")
+args = parser.parse_args()
+
+vnt_dbs = all_vnt_dbs
+if args.ignore_HGMD:
+    vnt_dbs.remove("HGMD_splice")
 
 # Parse bedtools intersect output
 def parse_intersect(intersect:pd.DataFrame) -> tuple[int, str, str]:
@@ -459,25 +468,23 @@ def find_3ss_vnts(db:str):
 
     ''' Find 3'splice site-affecting variants (call get_affecting_vnts())'''
     
-    print(f"finding 3' splice site-affecting {db.replace("_", " ")} variants...")
+    log_fn(f"Finding 3' splice site-affecting {db.replace("_", " ")} variants")
 
     get_affecting_vnts(sfx=db, site_bed=SS["3ss"].bed[DB[db].by_chrom], vnt_bed=DB[db].bed,
                        src_site_txt=SS["3ss"].txt, dst_site_txt=f"{ROOT}/variants/affecting/{db}_3ss_vnt_containing_ssites.txt",
                        src_vnt_txt=DB[db].txt, dst_vnt_txt=f"{ROOT}/variants/affecting/{db}_3ss_vnts.txt",
                        by_chrom=DB[db].by_chrom, stranded=DB[db].stranded, filter=None)
 
-    print("done")
-
 # NAGNAGs
 def find_nagnag_vnts(db:str):
 
     ''' Find NAGNAG-affecting variants; call get_affecting_vnts() and process_nagnag_vnts() '''
 
-    print(f"finding NAGNAG-affecting {db.replace("_", " ")} variants...")
+    log_fn(f"Finding NAGNAG-affecting {db.replace("_", " ")} variants")
     
     def by_effect(e:str):
-
-        print(f" - {e}")
+        
+        log_fn(f"NAGNAG-{e.removesuffix("e")}ing", sub=True)
 
         get_affecting_vnts(sfx=f"{e}_{db}", site_bed=SS[EFF[e].site_type].bed[DB[db].by_chrom],
                            vnt_bed=DB[db].bed, src_site_txt=SS[EFF[e].site_type].txt, dst_site_txt=None,
@@ -500,7 +507,8 @@ def find_nagnag_vnts(db:str):
                         create_sfx=f"create_{db}", alter_sfx=f"alter_{db}", destroy_sfx=f"destroy_{db}",
                         stranded=DB[db].stranded)
 
-    print("done")
+# ===== RUN ===== #
+log_script("09-find-variants.py")
 
 [find_3ss_vnts(db) for db in vnt_dbs]
 [find_nagnag_vnts(db) for db in vnt_dbs]

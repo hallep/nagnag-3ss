@@ -14,9 +14,6 @@ app_data/
 data/
 
 # temporary files/folders
-*.ipynb
+*.log
 app_data.py
-test.py
-temp.py
-test.sh
-old/
+.old/

@@ -1,20 +1,18 @@
-''' Run utilities
+''' Utilities
 * `ROOT`: root filepath
-* `lib`: external Python packages
 * `seq`: genomic sequence variables and functions
 * `vnt`: genomic variant variables and functions
 '''
 
-__all__ = ["ROOT", "lib", "seq", "vnt", "run"]
+__all__ = ["ROOT", "seq", "vnt", "log_script", "log_fn"]
 
 # Root Folder
 from pathlib import Path
 ROOT = Path(__file__).parent.parent.parent
 
+# Modules
 from . import seq
 from . import vnt
 
-def run(fn, *args, desc:str, sub:bool=False):
-    print(f"{" - " if sub else ""}{desc}...", end="", flush=True)
-    fn(*args)
-    print("done")
+# Run Log
+from .log import log_script, log_fn

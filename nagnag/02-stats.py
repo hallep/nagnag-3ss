@@ -1,4 +1,4 @@
-''' Get frequencies:
+''' Get site frequencies:
 * splice site types (`stats/3ss_site_type_freq.txt`)
 * NAGNAGs, expected vs. observed (`stats/exp_obs_nagnag_freq.txt`)
 * 1-NAG motifs (`stats/1nag_motif_freq.txt`)
@@ -7,8 +7,8 @@
 * NAGNAG splice scenario phases (`stats/nagnag_scen_phase_freq.txt`)
 '''
 
-from utils import ROOT, run
-from utils.lib import itertools, pd, np, proportions_ztest
+from lib import itertools, pd, np, proportions_ztest
+from utils import ROOT, log_script, log_fn
 from utils.seq import N
 
 # Splice site types
@@ -253,13 +253,22 @@ def nagnag_scen_phase_freq():
     }).set_index(keys="phase", inplace=False)
     df.to_csv("stats/nagnag_scen_phase_freq.txt", sep="\t")
 
-print("computing frequency statistics...")
+# ===== RUN ===== #
+log_script("01-sites.py")
+log_fn("Computing splice site frequency statistics")
 
-run(ss_type_freq, desc="3' splice site types", sub=True)
-run(exp_obs_nagnag_freq, desc="expected NAGNAG frequency", sub=True)
+log_fn("3' splice site types", sub=True)
+ss_type_freq()
+log_fn("Expected NAGNAG frequency", sub=True)
+exp_obs_nagnag_freq()
 
-run(canon_1nag_motif_freq, desc="1-NAG motifs", sub=True)
-run(nagnag_motif_freq, desc="NAGNAG motifs", sub=True)
+# Motifs
+log_fn("1-NAG motifs", sub=True)
+canon_1nag_motif_freq()
+log_fn("NAGNAG motifs", sub=True)
+nagnag_motif_freq()
 
-run(nagnag_splice_type_freq, desc="NAGNAG splice types", sub=True)
-run(nagnag_scen_phase_freq, desc="NAGNAG splice scenario phases", sub=True)
+log_fn("NAGNAG splice types", sub=True)
+nagnag_splice_type_freq()
+log_fn("NAGNAG splice scenario phases", sub=True)
+nagnag_scen_phase_freq()

@@ -1,5 +1,5 @@
-''' Parse NCBI RefSeq transcript annotation data 
-and extract splice sites, cleavage sites, and splice scenarios
+''' Parse NCBI RefSeq transcript annotation data;
+extract splice sites, cleavage sites, and splice scenarios
     
 **Created Files:**
 * `sites/3ss.txt`
@@ -9,8 +9,8 @@ and extract splice sites, cleavage sites, and splice scenarios
 * `sites/nagnag_scens.txt`
 '''
 
-from utils import ROOT, run
-from utils.lib import pd
+from lib import pd
+from utils import ROOT, log_script, log_fn
 from utils.seq import CHROMS, get_ss_seq, get_cs_seq, is_nag, get_sstype
 
 # Get cleavage sites
@@ -647,7 +647,18 @@ def parse_nagnag_scenarios():
     csites["scen_inds"] = [",".join(map(str, inds)) for inds in scen_inds_cs.values()]
     csites.to_csv(f"{ROOT}/sites/nagnag_3cs.txt", sep="\t", index=True)
 
-run(get_csites, desc="extracting 3' cleavage sites")
-run(group_csites, desc="identifying 3' splice sites")
-run(isolate_nagnags, desc="isolating NAGNAG 3' splice sites and cleavage sites")
-run(parse_nagnag_scenarios, desc="extracting NAGNAG splice scenarios")
+# ===== RUN ===== #
+log_script("01-sites.py")
+
+log_fn("Extracting 3' cleavage sites")
+get_csites()
+
+log_fn("Identifying 3' splice sites")
+group_csites()
+
+log_fn("Isolating NAGNAG 3' splice sites and cleavage sites")
+isolate_nagnags()
+
+log_fn("Extracting NAGNAG splice scenarios")
+parse_nagnag_scenarios()
+

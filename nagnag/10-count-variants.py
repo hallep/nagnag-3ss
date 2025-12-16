@@ -7,10 +7,19 @@
 * NAGNAG splice scenario phases (`stats/nagnag_scen_phase_freq.txt`)
 '''
 
-from utils import ROOT, run
-from utils.lib import subprocess, progress_map, pd, np
+from lib import argparse, subprocess, progress_map, pd, np
+from utils import ROOT, log_script, log_fn
 from utils.seq import CHROMS
-from utils.vnt import dtypes, vnt_dbs
+from utils.vnt import dtypes, all_vnt_dbs
+
+# Variant Databases
+parser = argparse.ArgumentParser()
+parser.add_argument("-H", "--ignore-HGMD", action="store_true", help="Do not process/analyze HGMD Splice data")
+args = parser.parse_args()
+
+vnt_dbs = all_vnt_dbs
+if args.ignore_HGMD:
+    vnt_dbs.remove("HGMD_splice")
 
 def bed_wcl(filename:str) -> int:
 
@@ -72,7 +81,9 @@ def count_vnts():
     dbC = sum(progress_map(bed_wcl, [f"dbSNP_common_{c}" for c in CHROMS], n_cpu=24, disable=True))
     dbR = sum(progress_map(bed_wcl, [f"dbSNP_rare_{c}" for c in CHROMS], n_cpu=24, disable=True))
     cv = bed_wcl("ClinVar")
-    hs = bed_wcl("HGMD_splice")
+
+    if not args.ignore_HGMD:
+        hs = bed_wcl("HGMD_splice")
 
     # DataFrame
     df = pd.DataFrame({
@@ -198,12 +209,21 @@ def count_affected_bases():
                       columns=vnt_dbs)
     df.to_csv(f"{ROOT}/variants/stats/affected_base_freq.txt", sep="\t")
 
-print("computing variant frequency statistics...")
+# ===== RUN ===== #
+log_script("10-count-variants.py")
+log_fn("Computing variant frequency statistics")
 
-run(count_sites, desc="variant-affected sites", sub=True)
-run(count_vnts, desc="variants", sub=True)
-run(count_events_scens, desc="events and scenarios by variant effect", sub=True)
-run(count_affected_bases, desc="variant-affected base", sub=True)
+log_fn("variant-affected sites", sub=True)
+count_sites()
+
+log_fn("variants", sub=True)
+count_vnts()
+
+log_fn("events and scenarios by variant effect", sub=True)
+count_events_scens()
+
+log_fn("variant-affected base", sub=True)
+count_affected_bases()
 
 # dbSNP Common: 33,629,539
 # dbSNP Rare: 56,354,5478

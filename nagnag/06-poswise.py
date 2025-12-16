@@ -1,7 +1,7 @@
 ''' Get position-wise base frequencies for 1-NAG and NAGNAG 3' splice sites '''
 
-from utils import ROOT
-from utils.lib import pd, np
+from lib import pd, np
+from utils import ROOT, log_script, log_fn
 from utils.seq import N
 
 # 1-NAG position-wise base frequencies
@@ -11,7 +11,7 @@ def poswise_freq_1nag():
 
     **Source:** `sites/3cs.txt`
 
-    `stats/1nag_poswise_freq.txt`
+    `proteome/1nag_poswise_freq.txt`
     -----------------------------
     **syntax**: df[phase][splice type][position][base]
     * **phase**: "all", "nc", "p0", "p1", "p2", "cds"
@@ -49,7 +49,7 @@ def poswise_freq_1nag():
     phase = ["all", "nc", "p0", "p1", "p2", "cds"]
     df = pd.DataFrame({(ph, "all", pos) : freq[i][j]/sum(freq[i][j]) for i,ph in enumerate(phase)
                        for j,pos in enumerate(position)}, index=N)
-    df.to_csv(f"{ROOT}/stats/1nag_poswise_freq.txt", sep="\t", index=True)
+    df.to_csv(f"{ROOT}/proteome/1nag_poswise_freq.txt", sep="\t", index=True)
 
 # NAGNAG position-wise base frequencies
 def poswise_freq_nagnag():
@@ -58,7 +58,7 @@ def poswise_freq_nagnag():
 
     **Source:** `sites/nagnag_scens.txt`
 
-    `stats/nagnag_poswise_freq.txt`
+    `proteome/nagnag_poswise_freq.txt`
     -------------------------------
     **syntax**: df[phase][splice type][position][base]
     * **phase**: "all", "nc", "p0", "p1", "p2", "cds"
@@ -95,11 +95,14 @@ def poswise_freq_nagnag():
     stype = ["all", "AS", "PS", "DS"]
     df = pd.DataFrame({(ph, st, pos) : freq[i][j][k]/sum(freq[i][j][k]) for i,ph in enumerate(phase)
                        for j,st in enumerate(stype) for k,pos in enumerate(position)}, index=N)
-    df.to_csv(f"{ROOT}/stats/nagnag_poswise_freq.txt", sep="\t", index=True)
+    df.to_csv(f"{ROOT}/proteome/nagnag_poswise_freq.txt", sep="\t", index=True)
 
-print("calculating position-wise base frequencies...", end="", flush=True)
+# ===== RUN ===== #
+log_script("06-poswise.py")
+log_fn("calculating position-wise base frequencies")
 
+log_fn("1-NAGs", sub=True)
 poswise_freq_1nag()
-poswise_freq_nagnag()
 
-print("done")
+log_fn("NAGNAGs", sub=True)
+poswise_freq_nagnag()

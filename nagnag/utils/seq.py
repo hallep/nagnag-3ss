@@ -1,7 +1,7 @@
 ''' Helper functions pertaining to DNA, RNA, and amino acid sequences '''
 
 from . import ROOT
-from .lib import pickle, re, Seq
+from lib import pickle, re, Seq
 
 hg38 = pickle.load(open(f"{ROOT}/src/hg38", "rb"))
 

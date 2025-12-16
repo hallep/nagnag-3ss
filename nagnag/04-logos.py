@@ -1,7 +1,7 @@
 ''' Create splice site sequence logos '''
 
-from utils import ROOT
-from utils.lib import pd, np, seqlogo
+from lib import pd, np, seqlogo
+from utils import ROOT, log_script, log_fn
 from utils.seq import N, hg38
 
 def get_ss_ppm(sites:pd.DataFrame, site_len:int=0, up_flank:int=0, down_flank:int=0,
@@ -146,13 +146,16 @@ def create_nagnag_stype_logo(stype:str, iflank:int=30, eflank:int=6):
     seqlogo.seqlogo(seqlogo.Ppm(ppm), size="xlarge", format="svg", filename=f"{ROOT}/figures/logos/{stype}_nagnags.svg",
                     first_index=-(iflank+6))
 
-print("creating sequence logos...", end="", flush=True)
+# ===== RUN ===== #
 
+log_script("04-logos.py")
+log_fn("Creating sequence motif logos")
+
+log_fn("Splice sites", sub=True)
 create_3ss_diagrams()
 create_5ss_diagrams()
 
+log_fn("NAGNAGs", sub=True)
 create_nagnag_stype_logo("ps")
 create_nagnag_stype_logo("ds")
 create_nagnag_stype_logo("as")
-
-print("done")

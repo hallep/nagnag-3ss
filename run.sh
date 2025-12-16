@@ -1,61 +1,54 @@
 #!/bin/bash
 
-# ===== GET SOURCE DATA ===== #
+echo "[$(date +"%Y-%m-%d %H:%M:%S")] CMD: run.sh $@" >&2
+
+# HGMD variant files
+while getopts "s:c:H" opt; do
+    case $opt in
+        s) SPLICE="--splice $OPTARG" ;;
+        c) COORDS="--coords $OPTARG" ;;
+        H) HARG="-H"
+    esac
+done
+
+# Download data
 mkdir -p src
+python nagnag/00-data.py $HARG $SPLICE $COORDS
 
-# NCBI RefSeq Data
-wget -O src/ncbiRefSeq.txt.gz https://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/ncbiRefSeq.txt.gz
-gunzip src/ncbiRefSeq.txt.gz
-echo "NCBI RefSeq transcripts downloaded"
-
-# Chromosome Sequences
-wget -O src/hg38.fa.gz https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz
-gunzip src/hg38.fa.gz
-echo "GRCh38/hg38 chromosome sequences downloaded"
-python scripts/data.py
-
-# dbSNP Variants
-wget -O src/dbSNP.vcf.gz https://ftp.ncbi.nih.gov/snp/organisms/human_9606_b151_GRCh38p7/VCF/00-All.vcf.gz
-gunzip src/dbSNP.vcf.gz
-echo "dbSNP variants downloaded"
-
-# ClinVar Variants
-wget -O src/ClinVar.vcf.gz https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/clinvar.vcf.gz
-gunzip src/ClinVar.vcf.gz
-echo "ClinVar variants downloaded"
-
-# ===== IDENTIFY SPLICE SITES ===== #
+# Identify splice sites
 mkdir -p sites
-python scripts/sites.py
+python nagnag/01-sites.py
 
-# ===== RUN FREQUENCY STATISTICS ===== #
+# Calculate frequency statistics
 mkdir -p stats
-python scripts/stats.py
+python nagnag/02-stats.py
 
-# ===== CREATE MOTIF HEATMAPS + LOGOS ===== #
+# Create motif heatmaps + logos
 mkdir -p figures/heatmaps
-python scripts/motifs.py
+python nagnag/03-motifs.py
 
 mkdir -p figures/logos
-python scripts/logos.py
+python nagnag/04-logos.py
 
-# ===== ANALYZE PROTEOME EFFECTS ===== #
-python scripts/proteome.py
-
-# ===== CONTROL FOR SPLICE SELECTION ===== #
+# Analyze proteomic effects
 mkdir -p proteome
-python scripts/poswise.py
-python scripts/splice_selection.py
+python nagnag/05-proteome.py
 
-# ===== Variants ===== #
-mkdir -p variants/src && mkdir -p variants/bed
-python scripts/init_variants.py
+python nagnag/06-poswise.py
+python nagnag/07-splice-selection.py
 
-mkdir -p variants/affecting && mkdir -p variants/found
-python scripts/find_variants.py
+# Variants
+mkdir -p variants/src variants/bed
+python nagnag/08-init-variants.py
+
+mkdir -p variants/affecting variants/found
+python nagnag/09-find-variants.py $HARG
 
 mkdir -p variants/stats
-python scripts/count_variants.py
+python nagnag/10-count-variants.py $HARG
 
 mkdir -p variants/proteome
-python scripts/analyze_variants.py
+python nagnag/11-analyze-variants.py $HARG
+
+# Done
+echo "[$(date +"%Y-%m-%d %H:%M:%S")] ---------- DONE ----------" >&2

@@ -1,7 +1,7 @@
 ''' External package imports '''
 
-__all__ = ["tqdm", "progress_map", "progress_starmap", "os", "subprocess", "pickle", "SeqIO",
-           "Seq", "re", "itertools", "pd", "np", "proportions_ztest", "plt", "seqlogo"]
+__all__ = ["tqdm", "progress_map", "progress_starmap", "os", "subprocess", "argparse", "pickle",
+           "Path", "SeqIO", "Seq", "re", "itertools", "pd", "np", "proportions_ztest", "plt", "seqlogo"]
 
 # Progress
 from tqdm import tqdm
@@ -10,7 +10,9 @@ from parallelbar import progress_map, progress_starmap
 # Input/Output
 import os
 import subprocess
+import argparse
 import pickle
+from pathlib import Path
 from Bio import SeqIO
 
 # Sequence

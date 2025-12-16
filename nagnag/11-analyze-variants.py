@@ -1,9 +1,18 @@
 ''' Analyze the effects of variants on the proteome '''
 
-from utils import ROOT
-from utils.lib import itertools, pd, np
-from utils.vnt import dtypes, vnt_dbs
+from lib import argparse, itertools, pd, np
+from utils import ROOT, log_script, log_fn
+from utils.vnt import dtypes, all_vnt_dbs
 from utils.seq import N, TSNS, OUT, AA, get_tsn, get_categorical_outcomes
+
+# Variant Databases
+parser = argparse.ArgumentParser()
+parser.add_argument("-H", "--ignore-HGMD", action="store_true", help="Do not process/analyze HGMD Splice data")
+args = parser.parse_args()
+
+vnt_dbs = all_vnt_dbs
+if args.ignore_HGMD:
+    vnt_dbs.remove("HGMD_splice")
 
 # --- Proteome Effects --- #
 
@@ -461,7 +470,7 @@ def consolidate_effects(suffix:str, n_index:int, n_cols:int, metric:str):
 
 def analyze_db(db:str=None):
 
-    print(f" - {db.replace("_", " ") if db else "hg38 reference"}...", end="", flush=True)
+    log_fn(db.replace("_", " ") if db else "hg38 reference", sub=True)
 
     if db:
         get_proteome_effects(db)
@@ -469,15 +478,16 @@ def analyze_db(db:str=None):
     count_transitions(db)
     count_outcomes(db)
 
-    print("done")
+# ===== RUN ===== #
+log_script("11-analyze-variants.py")
+log_fn("Calculating and counting variant proteomic effects")
 
-print("calculating and counting variant proteomic effects...")
 analyze_db()
 [analyze_db(db) for db in vnt_dbs]
 
-print("consolidating proteomic effects...", end="", flush=True)
+# Consolidate
+log_fn("Consolidating proteomic effects")
 consolidate_effects(suffix="vc", n_index=3, n_cols=5, metric="variable_codons")
 consolidate_effects(suffix="aat", n_index=3, n_cols=5, metric="variable_amino_acids")
 consolidate_effects(suffix="aatt", n_index=2, n_cols=6, metric="amino_acid_transitions")
 consolidate_effects(suffix="outcomes", n_index=3, n_cols=0, metric="amino_acid_outcomes")
-print("done")

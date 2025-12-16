@@ -1,7 +1,7 @@
 ''' Helper functions for variant processing '''
 
 from . import ROOT
-from .lib import pd
+from lib import pd
 
 dtypes = {
 
@@ -52,8 +52,8 @@ DB = {
     * bed (str): path to .bed file
 '''
 
-vnt_dbs = ["dbSNP_common", "dbSNP_rare", "ClinVar", "HGMD_splice"]
-''' List of variant databases: dbSNP_common, dbSNP_rare, ClinVar, HGMD_splice '''
+all_vnt_dbs = ["dbSNP_common", "dbSNP_rare", "ClinVar", "HGMD_splice"]
+''' List of all variant databases: dbSNP_common, dbSNP_rare, ClinVar, HGMD_splice '''
 
 # --- Splice Sites --- #
 class SpliceVntSite:
