@@ -79,3 +79,46 @@ def aa_outcomes():
     print_df(dfDel1)
     print_df(dfDel2)
 
+def vnt_aatypes():
+
+    df = pd.read_csv("variants/proteome/amino_acid_transitions_freq.txt", sep="\t", index_col=[0,1])
+
+    vnt_dbs = ["dbSNP_common", "dbSNP_rare", "ClinVar", "HGMD_splice"]
+    effects = ["create", "alter_ref", "alter_alt", "destroy"]
+
+    def get_phase(dfP:pd.DataFrame) -> pd.DataFrame:
+        
+        def get_effect(e:str) -> pd.DataFrame:
+            dfE = dfP[[f"{d}_{e}" for d in vnt_dbs]]
+            dfE.columns = vnt_dbs
+            return dfE
+        
+        return pd.concat((get_effect(e) for e in effects), keys=effects, names=["effect"])
+
+    df0 = get_phase(df.loc[0].loc[["E", "Q", "K", "*"]])
+    df1 = get_phase(df.loc[1].loc[["DID", "NID", "CID", "IDR", "NC", "ET"]])
+    df2 = get_phase(df.loc[2].loc[["DID", "NID", "CID", "IDR", "NC", "ET"]])
+
+    # print_df(df0)
+    # print_df(df1)
+    print_df(df2)
+
+def vnt_outcomes():
+    df = pd.read_csv("variants/proteome/amino_acid_outcomes_freq.txt", sep="\t", index_col=[0,1,2])
+
+    def get_out(out:str) -> pd.DataFrame:
+        dfOut = df.loc[3,out].loc[["A", "F", "I", "L", "M", "P", "V", "W", "C", "N", "Q", "S", "T", "Y", "D", "E", "H", "K", "R", "G", "*"]]
+
+        vnt_dbs = ["dbSNP_common", "dbSNP_rare", "ClinVar", "HGMD_splice"]
+        def get_effect(e:str) -> pd.DataFrame:
+            dfE = dfOut[[f"{d}_{e}" for d in vnt_dbs]]
+            dfE.columns = vnt_dbs
+            return dfE
+        
+        effects = ["create", "alter_ref", "alter_alt", "destroy"]
+        return pd.concat([get_effect(e) for e in effects], axis=1, keys=effects)
+
+    # print_df(get_out("ins"))
+    print(get_out("del"))
+
+vnt_outcomes()

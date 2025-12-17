@@ -135,7 +135,7 @@ def vc_weight(phase:int, wsource:int|list[int]=0, stype:str="all"):
     return [np.prod([p[w][f][s][x][b] for w,f,s,x,b in zip(wgts[phase], phases[phase], stypes[phase], pos[phase], vb)]) for vb in variable[phase]]
 
 # Possible variable codons
-def get_possible_vc(phase_freq:tuple[int, int, int]=[1,1,1]) -> pd.DataFrame:
+def get_possible_vc(phase_freq:dict[int,dict[str,int]]) -> pd.DataFrame:
 
     ''' Get all possible NAGNAG variable codons
 
@@ -145,8 +145,8 @@ def get_possible_vc(phase_freq:tuple[int, int, int]=[1,1,1]) -> pd.DataFrame:
     
     Parameters
     ----------
-    phase_freq : tuple of 3 ints (default = [1, 1, 1])
-        number of scenarios in each phase (for combining)
+    phase_freq : dictionary of dictionaries of integers
+        number of scenarios in each phase (outer dict.) and splice type (inner dict.)
     
     Returns
     -------
@@ -215,11 +215,17 @@ def get_possible_vc(phase_freq:tuple[int, int, int]=[1,1,1]) -> pd.DataFrame:
 
     # COMBINED
     p3 = pd.concat([p0, p1, p2])
-    f0, f1, f2 = np.divide(phase_freq, sum(phase_freq))
 
+    f = np.array([list(ph.values()) for ph in phase_freq.values()])
+    f0, f1, f2 = f.sum(axis=1) / f.sum()
+    
     p3["phase"] = [3] * len(p3)
-    for col in ["exp_stoch", "exp_splice", "exp_ps", "exp_ds", "exp_as"]:
+    for col in ["exp_stoch", "exp_splice"]:
         p3[col] = pd.concat([p0[col] * f0, p1[col] * f1, p2[col] * f2])
+
+    a = f / f.sum(axis=1)
+    for r,s in enumerate(["ps", "ds", "as"]):
+        p3[f"exp_{s}"] = pd.concat([p0[col] * a[0][r], p1[col] * a[1][r], p2[col] * a[2][r]])
 
     # ALL
     vc = pd.concat([p0, p1, p2, p3]).set_index(keys=["phase", "vc_ps", "vc_ds"])
@@ -295,7 +301,7 @@ def count_transitions(db:str=None):
 
     scens_phase = [scens[scens["phase"] == p] for p in range(3)] + [scens]
 
-    # get scenario variable codons
+    # get observed scenario variable codons by phase
     if db:
         scen_ref = [list(zip(df["vnt_effect"], df["vc_ps_ref"], df["vc_ds_ref"])) for df in scens_phase]
         scen_alt = [list(zip(df["vnt_effect"], df["vc_ps_alt"], df["vc_ds_alt"])) for df in scens_phase]
@@ -303,7 +309,10 @@ def count_transitions(db:str=None):
         scen_vc = [list(zip(df["splice_type"], df["vc_ps"], df["vc_ds"])) for df in scens_phase]
 
     # Variable Codons
-    vc = get_possible_vc(phase_freq=[len(scens[scens["phase"] == p]) for p in range(3)])
+    vc = get_possible_vc({p : {s : len(scens[(scens["phase"] == p) & (scens["splice_type"] == s)]) 
+                               for s in ["PS", "DS", "AS"]} for p in range(3)})
+    
+    # possible variable codons
     codons = [vc.loc[p].index.values for p in range(4)]
 
     if db:
