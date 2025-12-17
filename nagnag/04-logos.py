@@ -41,7 +41,7 @@ def get_ss_ppm(sites:pd.DataFrame, site_len:int=0, up_flank:int=0, down_flank:in
     return pfm / np.sum(pfm, axis=1, keepdims=True)
 
 # 3' Splice Site Diagrams
-def create_3ss_diagrams(iflank:int=30, eflank:int=9):
+def create_3ss_diagrams(iflank:int=30, eflank:int=3):
 
     ''' Create diagrams for 1-NAG and NAGNAG 3' splice sites
     
@@ -113,7 +113,7 @@ def create_5ss_diagrams(eflank:int=5, iflank:int=9, u1_len:int=13):
                     ic_scale=False, show_xaxis=False, show_yaxis=False, stack_aspect_ratio=5)
 
 # NAGNAG Logos by Splice Type
-def create_nagnag_stype_logo(stype:str, iflank:int=30, eflank:int=6):
+def create_nagnag_stype_logo(stype:str, iflank:int=25, eflank:int=1):
 
     ''' Create motif diagram and site data logo for NAGNAGs of a specific splice type
     
@@ -144,10 +144,9 @@ def create_nagnag_stype_logo(stype:str, iflank:int=30, eflank:int=6):
     ppm = get_ss_ppm(sites, site_len=6, up_flank=iflank, down_flank=eflank,
                      site_col="ssite_seq", up_col="ssite_iflank_3ss", down_col="ssite_eflank_3ss")
     seqlogo.seqlogo(seqlogo.Ppm(ppm), size="xlarge", format="svg", filename=f"{ROOT}/figures/logos/{stype}_nagnags.svg",
-                    first_index=-(iflank+6))
+                    first_index=-(iflank+6), stacks_per_line=iflank+eflank+12, fontsize=12, number_fontsize=10)
 
 # ===== RUN ===== #
-
 log_script("04-logos.py")
 log_fn("Creating sequence motif logos")
 

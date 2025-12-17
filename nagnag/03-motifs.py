@@ -34,11 +34,11 @@ def create_motif_heatmap(sfx:str, cm:str, cth:str, tmax:float, nticks:int, cmax:
     # load motif frequencies
     data = pd.read_csv(f"{ROOT}/stats/nagnag_motif_freq.txt", sep="\t", index_col=0)
 
-    num = data[f"num_{sfx}"].values[:-1].reshape((4,4))
-    prop = data[f"prop_{sfx}"].values[:-1].reshape((4,4))
+    num = data[f"num_{sfx}"].values[:-1].reshape((4,4)).T
+    prop = data[f"prop_{sfx}"].values[:-1].reshape((4,4)).T
 
     # figure
-    fig = plt.figure(figsize=(12,10), layout="tight")
+    fig = plt.figure(figsize=(12,10), layout="constrained")
     ax = fig.gca()
 
     # heatmap
