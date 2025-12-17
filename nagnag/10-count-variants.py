@@ -186,7 +186,7 @@ def count_affected_bases():
     '''
 
     # load variant events
-    events = [pd.read_csv(f"{ROOT}/variants/found/{db}_nagnag_vnt_events.txt", sep="\t", index_col=0, dtype=dtypes) for db in vnt_dbs]
+    events = {db : pd.read_csv(f"{ROOT}/variants/found/{db}_nagnag_vnt_events.txt", sep="\t", index_col=0, dtype=dtypes) for db in vnt_dbs}
 
     # possible positions for each variant effect type
     poss = {
@@ -194,38 +194,39 @@ def count_affected_bases():
         "ALTER" : [0, 3],
         "DESTROY" : [1, 2, 4, 5]
     }
-
-    # count frequencies
-    counts = [[df[(df["vnt_effect"] == e) & (df["vnt_pos"] == p)].__len__()
-               for df in events] for e,pos in poss.items() for p in pos]
-
     mpos = {0 : "N1", 1 : "A1", 2 : "G1", 3 : "N2", 4 : "A2", 5 : "G2"}
-    [(e, mpos[p]) for e,pos in poss.items() for p in pos]
 
-    # DataFrame
-    df = pd.DataFrame(counts, index=pd.MultiIndex.from_tuples([(e, mpos[p])
-                                                               for e,pos in poss.items() for p in pos],
-                                                               names=["effect", "base"]),
-                      columns=vnt_dbs)
+    # count frequencies for each database by effect
+    count = {
+        e : pd.DataFrame({
+            db : [df[(df["vnt_effect"] == e) & (df["vnt_pos"] == p)].__len__() for p in pos] for db,df in events.items()
+        }, index=pd.Index([mpos[p] for p in pos], name="base")) for e,pos in poss.items()
+    }
+
+    # calculate proportions
+    prop = {e : df / df.sum() for e,df in count.items()}
+
+    # combine counts and proportions
+    freq = {e : pd.concat((count[e], prop[e]), axis=1, keys=["count", "prop"]) for e in list(poss)}
+
+    # combine effects
+    df = pd.concat((freq.values()), keys=freq.keys(), names=["effect"])
     df.to_csv(f"{ROOT}/variants/stats/affected_base_freq.txt", sep="\t")
 
-# ===== RUN ===== #
-log_script("10-count-variants.py")
-log_fn("Computing variant frequency statistics")
-
-log_fn("variant-affected sites", sub=True)
-count_sites()
-
-log_fn("variants", sub=True)
-count_vnts()
-
-log_fn("events and scenarios by variant effect", sub=True)
-count_events_scens()
-
-log_fn("variant-affected base", sub=True)
 count_affected_bases()
 
-# dbSNP Common: 33,629,539
-# dbSNP Rare: 56,354,5478
-# ClinVar: 3401,768
-# HGMD: 35,462
+# ===== RUN ===== #
+# log_script("10-count-variants.py")
+# log_fn("Computing variant frequency statistics")
+
+# log_fn("variant-affected sites", sub=True)
+# count_sites()
+
+# log_fn("variants", sub=True)
+# count_vnts()
+
+# log_fn("events and scenarios by variant effect", sub=True)
+# count_events_scens()
+
+# log_fn("variant-affected base", sub=True)
+# count_affected_bases()
