@@ -18,6 +18,10 @@ def poswise_freq_1nag():
     * **splice type**: "all"
     * **position**: "u-2", "u-1", "d1", "d2"
     * **base**: "A", "C", "G", "T"
+
+    `proteome/1nag_poswise_freq_count.txt`
+    ----------------------------------------
+    same as `proteome/1nag_poswise_freq.txt`, but with raw counts
     '''
 
     # load 1-NAG cleavage sites
@@ -66,12 +70,16 @@ def poswise_freq_nagnag():
     **Source:** `sites/nagnag_scens.txt`
 
     `proteome/nagnag_poswise_freq.txt`
-    -------------------------------
+    ----------------------------------
     **syntax**: df[phase][splice type][position][base]
     * **phase**: "all", "nc", "p0", "p1", "p2", "cds"
     * **splice type**: "all", AS", "PS", "DS"
     * **position**: "u-2", "u-1", "d1", "d2"
     * **base**: "A", "C", "G", "T"
+
+    `proteome/nagnag_poswise_freq_count.txt`
+    ----------------------------------------
+    same as `proteome/nagnag_poswise_freq.txt`, but with raw counts
     '''
     
     # load splice scenarios
