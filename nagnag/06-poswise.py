@@ -45,11 +45,18 @@ def poswise_freq_1nag():
     freq = np.array([[[len(scens[(scens[pos] == n) & (scens["p"] == p)]) for n in N] for pos in position] for p in phase])
     freq = np.concatenate((freq, np.sum(freq[-3:], axis=0, keepdims=True)))
 
-    # DataFrame
+    # DataFrames
     phase = ["all", "nc", "p0", "p1", "p2", "cds"]
-    df = pd.DataFrame({(ph, "all", pos) : freq[i][j]/sum(freq[i][j]) for i,ph in enumerate(phase)
-                       for j,pos in enumerate(position)}, index=N)
-    df.to_csv(f"{ROOT}/proteome/1nag_poswise_freq.txt", sep="\t", index=True)
+
+    # counts
+    count = pd.DataFrame({(ph, "all", pos) : freq[i][j] for i,ph in enumerate(phase)
+                          for j,pos in enumerate(position)}, index=N)
+    count.to_csv(f"{ROOT}/proteome/1nag_poswise_freq_count.txt", sep="\t", index=True)
+
+    # proportions
+    prop = pd.DataFrame({(ph, "all", pos) : freq[i][j]/sum(freq[i][j]) for i,ph in enumerate(phase)
+                         for j,pos in enumerate(position)}, index=N)
+    prop.to_csv(f"{ROOT}/proteome/1nag_poswise_freq.txt", sep="\t", index=True)
 
 # NAGNAG position-wise base frequencies
 def poswise_freq_nagnag():
@@ -93,9 +100,16 @@ def poswise_freq_nagnag():
     # DataFrame
     phase = ["all", "nc", "p0", "p1", "p2", "cds"]
     stype = ["all", "AS", "PS", "DS"]
-    df = pd.DataFrame({(ph, st, pos) : freq[i][j][k]/sum(freq[i][j][k]) for i,ph in enumerate(phase)
-                       for j,st in enumerate(stype) for k,pos in enumerate(position)}, index=N)
-    df.to_csv(f"{ROOT}/proteome/nagnag_poswise_freq.txt", sep="\t", index=True)
+
+    # counts
+    count = pd.DataFrame({(ph, st, pos) : freq[i][j][k] for i,ph in enumerate(phase)
+                          for j,st in enumerate(stype) for k,pos in enumerate(position)}, index=N)
+    count.to_csv(f"{ROOT}/proteome/nagnag_poswise_freq_count.txt", sep="\t", index=True)
+
+    # proportions
+    prop = pd.DataFrame({(ph, st, pos) : freq[i][j][k]/sum(freq[i][j][k]) for i,ph in enumerate(phase)
+                         for j,st in enumerate(stype) for k,pos in enumerate(position)}, index=N)
+    prop.to_csv(f"{ROOT}/proteome/nagnag_poswise_freq.txt", sep="\t", index=True)
 
 # ===== RUN ===== #
 log_script("06-poswise.py")
