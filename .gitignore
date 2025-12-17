@@ -16,4 +16,5 @@ data/
 # temporary files/folders
 *.log
 app_data.py
+data.py
 .old/
