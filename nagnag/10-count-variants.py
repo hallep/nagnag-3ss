@@ -213,20 +213,18 @@ def count_affected_bases():
     df = pd.concat((freq.values()), keys=freq.keys(), names=["effect"])
     df.to_csv(f"{ROOT}/variants/stats/affected_base_freq.txt", sep="\t")
 
-count_affected_bases()
-
 # ===== RUN ===== #
-# log_script("10-count-variants.py")
-# log_fn("Computing variant frequency statistics")
+log_script("10-count-variants.py")
+log_fn("Computing variant frequency statistics")
 
-# log_fn("variant-affected sites", sub=True)
-# count_sites()
+log_fn("variant-affected sites", sub=True)
+count_sites()
 
-# log_fn("variants", sub=True)
-# count_vnts()
+log_fn("variants", sub=True)
+count_vnts()
 
-# log_fn("events and scenarios by variant effect", sub=True)
-# count_events_scens()
+log_fn("events and scenarios by variant effect", sub=True)
+count_events_scens()
 
-# log_fn("variant-affected base", sub=True)
-# count_affected_bases()
+log_fn("variant-affected base", sub=True)
+count_affected_bases()

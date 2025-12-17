@@ -359,8 +359,7 @@ def count_transitions(db:str=None):
     aat.insert(loc=4, column="prop_aat", value=[1/len(aat.loc[p]) for p in range(4) for _ in range(len(aat.loc[p]))])
     aat_phase = [aat.loc[p] for p in [0,1,2]]
 
-    agg = {col : (lambda ser: ser.iloc[0]) for col in OUT}
-    agg.update({col : "sum" for col in ["num_vc", "prop_vc", "num_aat", "prop_aat"] + exp_col + freq_col})
+    agg = {col : "sum" for col in ["num_vc", "prop_vc", "num_aat", "prop_aat"] + exp_col + freq_col}
 
     # DataFrame    
     aatt = pd.concat([a.groupby(["phase", "aattype"]).aggregate(agg) for a in aat_phase])
