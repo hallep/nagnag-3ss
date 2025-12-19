@@ -193,25 +193,25 @@ def create_nc_v_cds_logo(stype:str|None=None):
         }).T.to_numpy()
 
         seqlogo.seqlogo(seqlogo.Ppm(ppm), size="xlarge", format="svg", filename=f"{ROOT}/figures/logos/{name}_{stype if stype else "all"}_variable_bases.svg",
-                        ic_scale=True, fontsize=12, number_fontsize=10, annotate=["U-2", "U-1", " ", " ", " ", "N1", " ", " ", "N2", " ", " ", "D1", "D2"])
+                        ic_scale=True, fontsize=18, number_fontsize=18, annotate=["U-2", "U-1", "", "", "", "N1", "", "", "N2", "", "", "D1", "D2"])
 
     make_logo("nc", scens[scens["phase"] == -1])
     make_logo("cds", scens[scens["phase"] != -1])
 
-# # ===== RUN ===== #
-# log_script("04-logos.py")
-# log_fn("Creating sequence motif logos")
+# ===== RUN ===== #
+log_script("04-logos.py")
+log_fn("Creating sequence motif logos")
 
-# log_fn("Splice sites", sub=True)
-# create_3ss_diagrams()
-# create_5ss_diagrams()
+log_fn("Splice sites", sub=True)
+create_3ss_diagrams()
+create_5ss_diagrams()
 
-# log_fn("NAGNAGs", sub=True)
-# create_nagnag_stype_logo("ps")
-# create_nagnag_stype_logo("ds")
-# create_nagnag_stype_logo("as")
+log_fn("NAGNAGs", sub=True)
+create_nagnag_stype_logo("ps")
+create_nagnag_stype_logo("ds")
+create_nagnag_stype_logo("as")
 
-# log_fn("Scenarios", sub=True)
+log_fn("Scenarios", sub=True)
 create_nc_v_cds_logo()
 create_nc_v_cds_logo("ps")
 create_nc_v_cds_logo("ds")
