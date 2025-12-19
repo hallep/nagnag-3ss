@@ -94,7 +94,7 @@ def exp_obs_nagnag_freq():
 
     # Series
     ser = pd.Series(data=[exp, obs, num_nagnag, num_nag, z, p],
-                    index=["exp", "obs", "x", "n", "z", "p"])
+                    index=["exp", "obs", "x", "n", "z", "p"], name="exp_obs")
     ser.to_csv(f"{ROOT}/stats/exp_obs_nagnag_freq.txt", sep="\t")
 
 # 1-NAG motifs
@@ -247,7 +247,7 @@ def nagnag_scen_phase_freq():
     # DataFrame
     df = pd.DataFrame({
         "phase" : [-1, 0, 1, 2, 3],
-        "count" : count,
+        "num" : count,
         "prop" : count / sum(count[:-1]),
         "prop_CDS" : [np.NaN] + list(count[1:-1] / sum(count[1:-1])) + [1]
     }).set_index(keys="phase", inplace=False)

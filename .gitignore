@@ -12,9 +12,13 @@ figures/
 variants/
 app_data/
 data/
+paper_tables/
 
 # temporary files/folders
 *.log
 app_data.py
 data.py
+tables.py
 .old/
+*.png
+*.svg

@@ -201,10 +201,10 @@ def inserted(p:int, ps:str, ds:str) -> str:
     # indel
     aa_ps = list(ps)
     
-    try:
+    if ds in aa_ps:
         aa_ps.remove(ds)
-    finally:
-        return "".join(aa_ps)
+
+    return "".join(aa_ps)
 
 def deleted(p:int, ps:str, ds:str) -> str:
 

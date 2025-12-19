@@ -135,26 +135,84 @@ def create_nagnag_stype_logo(stype:str, iflank:int=25, eflank:int=1):
     }[stype]
     sites = nagnag[nagnag["csite_pos"] == pos]
 
-    # motif_logo
+    # motif logo
     ppm = get_ss_ppm(sites, site_len=6, site_col="ssite_seq")
     seqlogo.seqlogo(seqlogo.Ppm(ppm), size="xlarge", format="svg", filename=f"{ROOT}/figures/logos/{stype}_motifs.svg",
                     ic_scale=False, show_xaxis=False, show_yaxis=False)
 
-    # motif_logo
+    # site logo
     ppm = get_ss_ppm(sites, site_len=6, up_flank=iflank, down_flank=eflank,
                      site_col="ssite_seq", up_col="ssite_iflank_3ss", down_col="ssite_eflank_3ss")
     seqlogo.seqlogo(seqlogo.Ppm(ppm), size="xlarge", format="svg", filename=f"{ROOT}/figures/logos/{stype}_nagnags.svg",
                     first_index=-(iflank+6), stacks_per_line=iflank+eflank+12, fontsize=12, number_fontsize=10)
 
-# ===== RUN ===== #
-log_script("04-logos.py")
-log_fn("Creating sequence motif logos")
+def create_nc_v_cds_logo(stype:str|None=None):
+    
+    ''' Create motif logo for variable bases in non-coding and coding 
+    NAGNAG splice scenarios of a specific splice type
+    
+    **Source:** `sites/nagnag_scens.txt`
 
-log_fn("Splice sites", sub=True)
-create_3ss_diagrams()
-create_5ss_diagrams()
+    **Destination:**
+    * `figures/logos/nc_{stype}_variable_bases.svg`
+    * `figures/logos/cds_{stype}_variable_bases.svg`
+    '''
 
-log_fn("NAGNAGs", sub=True)
-create_nagnag_stype_logo("ps")
-create_nagnag_stype_logo("ds")
-create_nagnag_stype_logo("as")
+    # load scenarios
+    scens = pd.read_csv(f"{ROOT}/sites/nagnag_scens.txt", sep="\t",
+                        usecols=["splice_type", "phase", "up_seq", "ssite_seq", "down_seq"])
+
+    # isolate splice type
+    if stype:
+        scens = scens[scens["splice_type"] == stype.upper()]
+    
+    # get bases
+    scens["u-2"] = scens["up_seq"].str.get(-2).str.upper()
+    scens["u-1"] = scens["up_seq"].str.get(-1).str.upper()
+    scens["n2"] = scens["ssite_seq"].str.get(3).str.upper()
+    scens["n1"] = scens["ssite_seq"].str.get(0).str.upper()
+    scens["d1"] = scens["down_seq"].str.get(0).str.upper()
+    scens["d2"] = scens["down_seq"].str.get(1).str.upper()
+
+    def make_logo(name:str, df:pd.DataFrame):
+        
+        ppm = pd.DataFrame({
+            "u-2" : df["u-2"].value_counts().sort_index().values / len(df),
+            "u-1" : df["u-1"].value_counts().sort_index().values / len(df),
+            "i0" : [0.25] * 4,
+            "i1" : [0.25] * 4,
+            "i2" : [0.25] * 4,
+            "n1" : df["n1"].value_counts().sort_index().values / len(df),
+            "a1" : [1,0,0,0],
+            "g1" : [0,0,1,0],
+            "n2" : df["n2"].value_counts().sort_index().values / len(df),
+            "a2" : [1,0,0,0],
+            "g2" : [0,0,1,0],
+            "d1" : df["d1"].value_counts().sort_index().values / len(df),
+            "d2" : df["d2"].value_counts().sort_index().values / len(df),
+        }).T.to_numpy()
+
+        seqlogo.seqlogo(seqlogo.Ppm(ppm), size="xlarge", format="svg", filename=f"{ROOT}/figures/logos/{name}_{stype if stype else "all"}_variable_bases.svg",
+                        ic_scale=True, fontsize=12, number_fontsize=10, annotate=["U-2", "U-1", " ", " ", " ", "N1", " ", " ", "N2", " ", " ", "D1", "D2"])
+
+    make_logo("nc", scens[scens["phase"] == -1])
+    make_logo("cds", scens[scens["phase"] != -1])
+
+# # ===== RUN ===== #
+# log_script("04-logos.py")
+# log_fn("Creating sequence motif logos")
+
+# log_fn("Splice sites", sub=True)
+# create_3ss_diagrams()
+# create_5ss_diagrams()
+
+# log_fn("NAGNAGs", sub=True)
+# create_nagnag_stype_logo("ps")
+# create_nagnag_stype_logo("ds")
+# create_nagnag_stype_logo("as")
+
+# log_fn("Scenarios", sub=True)
+create_nc_v_cds_logo()
+create_nc_v_cds_logo("ps")
+create_nc_v_cds_logo("ds")
+create_nc_v_cds_logo("as")

@@ -207,7 +207,7 @@ def count_affected_bases():
     prop = {e : df / df.sum() for e,df in count.items()}
 
     # combine counts and proportions
-    freq = {e : pd.concat((count[e], prop[e]), axis=1, keys=["count", "prop"]) for e in list(poss)}
+    freq = {e : pd.concat((count[e], prop[e]), axis=1, keys=["num", "prop"]) for e in list(poss)}
 
     # combine effects
     df = pd.concat((freq.values()), keys=freq.keys(), names=["effect"])
