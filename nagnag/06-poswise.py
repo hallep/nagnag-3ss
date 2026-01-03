@@ -123,8 +123,8 @@ def poswise_freq_nagnag():
 log_script("06-poswise.py")
 log_fn("calculating position-wise base frequencies")
 
-log_fn("1-NAGs", sub=True)
+log_fn("1-NAGs", sub=1)
 poswise_freq_1nag()
 
-log_fn("NAGNAGs", sub=True)
+log_fn("NAGNAGs", sub=1)
 poswise_freq_nagnag()

@@ -249,7 +249,7 @@ def nagnag_scen_phase_freq():
         "phase" : [-1, 0, 1, 2, 3],
         "num" : count,
         "prop" : count / sum(count[:-1]),
-        "prop_CDS" : [np.NaN] + list(count[1:-1] / sum(count[1:-1])) + [1]
+        "prop_CDS" : [np.nan] + list(count[1:-1] / sum(count[1:-1])) + [1]
     }).set_index(keys="phase", inplace=False)
     df.to_csv("stats/nagnag_scen_phase_freq.txt", sep="\t")
 
@@ -257,18 +257,18 @@ def nagnag_scen_phase_freq():
 log_script("01-sites.py")
 log_fn("Computing splice site frequency statistics")
 
-log_fn("3' splice site types", sub=True)
+log_fn("3' splice site types", sub=1)
 ss_type_freq()
-log_fn("Expected NAGNAG frequency", sub=True)
+log_fn("Expected NAGNAG frequency", sub=1)
 exp_obs_nagnag_freq()
 
 # Motifs
-log_fn("1-NAG motifs", sub=True)
+log_fn("1-NAG motifs", sub=1)
 canon_1nag_motif_freq()
-log_fn("NAGNAG motifs", sub=True)
+log_fn("NAGNAG motifs", sub=1)
 nagnag_motif_freq()
 
-log_fn("NAGNAG splice types", sub=True)
+log_fn("NAGNAG splice types", sub=1)
 nagnag_splice_type_freq()
-log_fn("NAGNAG splice scenario phases", sub=True)
+log_fn("NAGNAG splice scenario phases", sub=1)
 nagnag_scen_phase_freq()

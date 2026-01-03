@@ -1,9 +1,9 @@
-''' Helper functions pertaining to DNA, RNA, and amino acid sequences '''
+''' Helper constants and functions pertaining to DNA, RNA, and amino acid sequences '''
 
 from . import ROOT
 from lib import pickle, re, Seq
 
-hg38 = pickle.load(open(f"{ROOT}/src/hg38", "rb"))
+hg38:dict[str, Seq.Seq] = pickle.load(open(f"{ROOT}/src/hg38", "rb"))
 
 # ===== Sequence ===== #
 
@@ -168,7 +168,6 @@ def get_tsn(up:str, motif:str, down:str, phase:str|int) -> tuple[str, str, str, 
     return ps_codon, ds_codon, ps_aa, ds_aa, aattype
 
 # Amino Acid Outcomes
-AA = ["A", "F", "I", "L", "M", "P", "V", "W", "C", "N", "Q", "S", "T", "Y", "D", "E", "H", "K", "R", "G", "*"]
 OUT = ["ins", "del"]
 
 def inserted(p:int, ps:str, ds:str) -> str:

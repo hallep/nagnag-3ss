@@ -7,13 +7,14 @@
 * NAGNAG splice scenario phases (`stats/nagnag_scen_phase_freq.txt`)
 '''
 
-from lib import argparse, subprocess, progress_map, pd, np
-from utils import ROOT, log_script, log_fn
+from lib import argparse, subprocess, pd, np
+from utils import ROOT, log_script, log_fn, single_map
 from utils.seq import CHROMS
 from utils.vnt import dtypes, all_vnt_dbs
 
 # Variant Databases
 parser = argparse.ArgumentParser()
+parser.add_argument("-t", "--num-threads", type=int, help="maximum number of parallel threads to use")
 parser.add_argument("-H", "--ignore-HGMD", action="store_true", help="Do not process/analyze HGMD Splice data")
 args = parser.parse_args()
 
@@ -78,8 +79,8 @@ def count_vnts():
     nn = [pd.read_csv(f"{ROOT}/variants/found/{db}_nagnag_affecting_vnts.txt", sep="\t", dtype=dtypes) for db in vnt_dbs]
     
     # count possible
-    dbC = sum(progress_map(bed_wcl, [f"dbSNP_common_{c}" for c in CHROMS], n_cpu=24, disable=True))
-    dbR = sum(progress_map(bed_wcl, [f"dbSNP_rare_{c}" for c in CHROMS], n_cpu=24, disable=True))
+    dbC = sum(single_map(bed_wcl, [f"dbSNP_common_{c}" for c in CHROMS], n_procs=args.num_threads))
+    dbR = sum(single_map(bed_wcl, [f"dbSNP_rare_{c}" for c in CHROMS], n_procs=args.num_threads))
     cv = bed_wcl("ClinVar")
 
     if not args.ignore_HGMD:
@@ -214,17 +215,18 @@ def count_affected_bases():
     df.to_csv(f"{ROOT}/variants/stats/affected_base_freq.txt", sep="\t")
 
 # ===== RUN ===== #
-log_script("10-count-variants.py")
-log_fn("Computing variant frequency statistics")
+if __name__ == "__main__":
+    log_script("10-count-variants.py")
+    log_fn("Computing variant frequency statistics")
 
-log_fn("variant-affected sites", sub=True)
-count_sites()
+    log_fn("variant-affected sites", sub=1)
+    count_sites()
 
-log_fn("variants", sub=True)
-count_vnts()
+    log_fn("variants", sub=1)
+    count_vnts()
 
-log_fn("events and scenarios by variant effect", sub=True)
-count_events_scens()
+    log_fn("events and scenarios by variant effect", sub=1)
+    count_events_scens()
 
-log_fn("variant-affected base", sub=True)
-count_affected_bases()
+    log_fn("variant-affected base", sub=1)
+    count_affected_bases()

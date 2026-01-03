@@ -202,16 +202,16 @@ def create_nc_v_cds_logo(stype:str|None=None):
 log_script("04-logos.py")
 log_fn("Creating sequence motif logos")
 
-log_fn("Splice sites", sub=True)
+log_fn("Splice sites", sub=1)
 create_3ss_diagrams()
 create_5ss_diagrams()
 
-log_fn("NAGNAGs", sub=True)
+log_fn("NAGNAGs", sub=1)
 create_nagnag_stype_logo("ps")
 create_nagnag_stype_logo("ds")
 create_nagnag_stype_logo("as")
 
-log_fn("Scenarios", sub=True)
+log_fn("Scenarios", sub=1)
 create_nc_v_cds_logo()
 create_nc_v_cds_logo("ps")
 create_nc_v_cds_logo("ds")

@@ -122,9 +122,11 @@ def filter_effect(df:pd.DataFrame, effect:str=None, stranded:bool=None) -> pd.Da
         
         Conditions:
         * affected base ("p") is 0 (n1) or 3 (n2)
+        * has at least one valid (i.e., non ".") base
         '''
 
-        return df[(df["p"] == 0) | (df["p"] == 3)]
+        v = df["a"].str.split(",").apply(lambda x: len(set(x).intersection(["A","C","G","T"])) > 0)
+        return df[((df["p"] == 0) | (df["p"] == 3)) & (v)]
 
     # destroy
     def filter_destroy(df:pd.DataFrame, _:bool) -> pd.DataFrame:

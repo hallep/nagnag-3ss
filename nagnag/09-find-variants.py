@@ -1,12 +1,13 @@
 ''' Find splice site-affecting variants from dbSNP, ClinVar, and HGMD Splice '''
 
-from lib import argparse, os, progress_map, progress_starmap, pd
-from utils import ROOT, log_script, log_fn
-from utils.seq import CHROMS
+from lib import argparse, os, pd
+from utils import ROOT, log_script, log_fn, single_map, multi_map
+from utils.seq import CHROMS, N
 from utils.vnt import dtypes, txt_cols, all_vnt_dbs, SS, DB, EFF, filter_effect
 
 # Variant Databases
 parser = argparse.ArgumentParser()
+parser.add_argument("-t", "--num-threads", type=int, help="maximum number of parallel threads to use")
 parser.add_argument("-H", "--ignore-HGMD", action="store_true", help="Do not process/analyze HGMD Splice data")
 args = parser.parse_args()
 
@@ -58,7 +59,8 @@ def find_variants(site_bed:str, vnt_bed:str, intersect:str, sites:pd.DataFrame, 
         return list(sites.index), [0] * len(sites), ["."] * len(sites), ["."] * len(sites), []
 
     # get variants that affect each site
-    num, ids, pos = zip(*progress_map(parse_intersect, [res.loc[i] if (i in res.index) else pd.DataFrame() for i in sites.index], n_cpu=24))
+    num, ids, pos = zip(*single_map(parse_intersect, [res.loc[i] if (i in res.index) else pd.DataFrame() for i in sites.index],
+                                    n_procs=args.num_threads))
 
     return list(sites.index), list(num), list(ids), list(pos), list(set(res["id"]))
 
@@ -75,7 +77,8 @@ def isolate_variants(vnt_txt:str, vnt_ids:list[str]) -> str:
 
 # Get affecting variants
 def get_affecting_vnts(sfx:str, site_bed:str, vnt_bed:str, src_site_txt:str, dst_site_txt:str|None,
-                       src_vnt_txt:str, dst_vnt_txt:str, by_chrom:bool, stranded:bool, filter:str|None):
+                       src_vnt_txt:str, dst_vnt_txt:str, by_chrom:bool, stranded:bool, filter:str|None,
+                       indent:int):
     
     ''' Find splice site-affecting variants; isolate variants and affected sites '''
 
@@ -83,11 +86,12 @@ def get_affecting_vnts(sfx:str, site_bed:str, vnt_bed:str, src_site_txt:str, dst
     sites = pd.read_csv(src_site_txt, sep="\t", index_col=0, dtype=dtypes)
 
     # find intersection
+    log_fn("searching variants", sub=indent)
     if by_chrom:
         
         # find variants
-        results = list(zip(*[find_variants(site_bed=site_bed.replace("#", c), vnt_bed=vnt_bed.replace("#", c),
-                                           intersect=f"{ROOT}/variants/bed/intersect_{c}.bed",
+        results = list(zip(*[find_variants(site_bed=site_bed.replace("#", c), vnt_bed=vnt_bed.replace("#", c), 
+                                           intersect=f"{ROOT}/variants/bed/intersect_{c}.bed", 
                                            sites=sites[sites["chrom"] == c], stranded=stranded, filter=filter)
                              for c in CHROMS]))
 
@@ -116,6 +120,7 @@ def get_affecting_vnts(sfx:str, site_bed:str, vnt_bed:str, src_site_txt:str, dst
         sites[sites[f"num_vnts_{sfx}"] > 0].to_csv(dst_site_txt, sep="\t", index=True)
     
     # save site-affecting variants
+    log_fn("saving variants", sub=indent)
     if by_chrom:
         with open(dst_vnt_txt, "w") as file:
 
@@ -124,8 +129,8 @@ def get_affecting_vnts(sfx:str, site_bed:str, vnt_bed:str, src_site_txt:str, dst
             file.write(header)
 
             # rows
-            rows = progress_starmap(isolate_variants, [(src_vnt_txt.replace("#", c), n)
-                                                       for c,n in zip(CHROMS, results[4])], n_cpu=24)
+            rows = multi_map(isolate_variants, [(src_vnt_txt.replace("#", c), n) for c,n in zip(CHROMS, results[4])],
+                             n_procs=args.num_threads)
             file.writelines(rows)
 
     else:
@@ -259,7 +264,7 @@ def process_nagnag_vnts(create_vnt_txt:str, alter_vnt_txt:str, destroy_vnt_txt:s
         i = 0
 
         # get first single-base allele
-        while len(alts[i]) != 1:
+        while (alts[i].upper() not in N) or (len(alts[i]) != 1):
             i += 1
 
         return i
@@ -473,7 +478,7 @@ def find_3ss_vnts(db:str):
     get_affecting_vnts(sfx=db, site_bed=SS["3ss"].bed[DB[db].by_chrom], vnt_bed=DB[db].bed,
                        src_site_txt=SS["3ss"].txt, dst_site_txt=f"{ROOT}/variants/affecting/{db}_3ss_vnt_containing_ssites.txt",
                        src_vnt_txt=DB[db].txt, dst_vnt_txt=f"{ROOT}/variants/affecting/{db}_3ss_vnts.txt",
-                       by_chrom=DB[db].by_chrom, stranded=DB[db].stranded, filter=None)
+                       by_chrom=DB[db].by_chrom, stranded=DB[db].stranded, filter=None, indent=1)
 
 # NAGNAGs
 def find_nagnag_vnts(db:str):
@@ -484,12 +489,12 @@ def find_nagnag_vnts(db:str):
     
     def by_effect(e:str):
         
-        log_fn(f"NAGNAG-{e.removesuffix("e")}ing", sub=True)
+        log_fn(f"NAGNAG-{e.removesuffix("e")}ing", sub=1)
 
         get_affecting_vnts(sfx=f"{e}_{db}", site_bed=SS[EFF[e].site_type].bed[DB[db].by_chrom],
                            vnt_bed=DB[db].bed, src_site_txt=SS[EFF[e].site_type].txt, dst_site_txt=None,
                            src_vnt_txt=DB[db].txt, dst_vnt_txt=f"{ROOT}/variants/affecting/{db}_nagnag_{EFF[e].adj}_vnts.txt",
-                           by_chrom=DB[db].by_chrom, stranded=DB[db].stranded, filter=e)
+                           by_chrom=DB[db].by_chrom, stranded=DB[db].stranded, filter=e, indent=2)
 
     # find
     by_effect("create")
@@ -508,7 +513,8 @@ def find_nagnag_vnts(db:str):
                         stranded=DB[db].stranded)
 
 # ===== RUN ===== #
-log_script("09-find-variants.py")
-
-[find_3ss_vnts(db) for db in vnt_dbs]
-[find_nagnag_vnts(db) for db in vnt_dbs]
+if __name__ == "__main__":
+    log_script("09-find-variants.py")
+    
+    [find_3ss_vnts(db) for db in vnt_dbs]
+    [find_nagnag_vnts(db) for db in vnt_dbs]

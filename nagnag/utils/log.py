@@ -1,3 +1,5 @@
+''' Debug log functions '''
+
 import sys
 from datetime import datetime
 
@@ -7,5 +9,5 @@ def TIME():
 def log_script(name:str):
     print(f"{TIME()} ---------- {name} ----------", file=sys.stderr)
 
-def log_fn(desc:str, sub:bool=False):
-    print(f"{TIME()}{"\t" if sub else " "}{desc}", file=sys.stderr)
+def log_fn(desc:str, sub:int=0):
+    print(f"{TIME()}{"".join(["\t"] * sub) if sub else " "}{desc}", file=sys.stderr)

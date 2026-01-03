@@ -8,7 +8,7 @@
 * `src/ClinVar.vcf`
 '''
 
-from lib import argparse, subprocess, pickle, Path, SeqIO, tqdm, pd
+from lib import argparse, subprocess, pickle, Path, SeqIO, pd
 from utils import ROOT, log_script, log_fn
 from utils.seq import CHROMS
 from utils.vnt import txt_cols, vcf_cols
@@ -24,8 +24,8 @@ args = parser.parse_args()
 
 # get data
 def download(name:str, link:str):
-    subprocess.run(["wget", "-O", f"{ROOT}/src/{name}", link])
-    subprocess.run(["gunzip", "-f", f"{ROOT}/src/{name}"])
+    subprocess.run(["wget", "-q", "-O", f"{ROOT}/src/{name}", link])
+    subprocess.run(["gunzip", "-q", "-f", f"{ROOT}/src/{name}"])
 
 # ----- Process Variants ----- #
 
@@ -78,14 +78,14 @@ def vcf2txt2bed(vcf:str, txt:str, bed:str, by_chrom:bool=False, split_freq:bool=
         [f.write(header) for c in txt_files.values() for f in c.values()]
 
         # for each line:
-        for line in tqdm(open(vcf, "r")):
+        for line in open(vcf, "r"):
 
             # if variant (not comment):
             if line[0] != "#":
                                     
                 # parse line
                 l = line.strip().split("\t")
-                chrom, pos, rs, ref, alt = fmt_chrom(l[0]), int(l[1]), l[2], l[3], l[4]
+                chrom, pos, rs, ref, alt = fmt_chrom(l[0]), int(l[1]), l[2], l[3].upper(), l[4].upper()
 
                 # if single-base substitution on canonical chromosome:
                 if (chrom in CHROMS) and (len(ref) == 1) and (any((len(a) == 1) for a in alt.split(","))):
@@ -109,12 +109,15 @@ def vcf2txt2bed(vcf:str, txt:str, bed:str, by_chrom:bool=False, split_freq:bool=
                          dtype={0:"str", 1:"int", 2:"str", 3:"str", 4:"str", 5:"str", 6:"str", 7:"str"})
         df = df[["id", "chrom", "pos", "ref", "alt", "qual", "filter", "info"]]
 
+        # ensure bases are uppercase
+        df["alt"] = df["alt"].str.upper()
+
         # add "chr" to chromosome name
         df["chrom"] = df["chrom"].apply(lambda x: fmt_chrom(x))
 
         # filter single-base substitutions on canonical chromosomes
         df = df[(df["chrom"].apply(lambda x: x in CHROMS + ["MT"])) & (df["ref"].str.len() == 1) &
-                (df["alt"].apply(lambda x: any((len(a) == 1) for a in x.split(","))))]
+                (df["alt"] != ".") & (df["alt"].apply(lambda x: any((len(a) == 1) for a in x.split(","))))]
 
         # .bed file
         def txt2bed(df:pd.DataFrame, bed_file:str):
@@ -184,7 +187,7 @@ def sql2txt2bed(sql:str, txt:str, bed:str, coords:str):
 
     # filter single-base substitutions on canonical chromosomes
     df = df[(df["chrom"].apply(lambda x: x in CHROMS)) & (df["ref"].str.len() == 1) &
-            (df["alt"].apply(lambda x: any((len(a) == 1) for a in x.split(","))))]
+            (df["alt"] != ".") & (df["alt"].apply(lambda x: any((len(a) == 1) for a in x.split(","))))]
 
     df.to_csv(txt, sep="\t", index=False)
 
@@ -225,7 +228,7 @@ vcf2txt2bed(vcf=f"{ROOT}/src/ClinVar.vcf", txt=f"{ROOT}/variants/src/ClinVar.txt
             bed=f"{ROOT}/variants/bed/ClinVar.bed", by_chrom=False, split_freq=False)
 
 # HGMD Splice
-if not args.ignore_hgmd:
+if not args.ignore_HGMD:
     log_fn("Processing HGMD Splice SQL data")
     sql2txt2bed(sql=args.splice, txt=f"{ROOT}/variants/src/HGMD_splice.txt",
                 bed=f"{ROOT}/variants/bed/HGMD_splice.bed", coords=args.coords)

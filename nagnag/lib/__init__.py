@@ -1,11 +1,7 @@
 ''' External package imports '''
 
-__all__ = ["tqdm", "progress_map", "progress_starmap", "os", "subprocess", "argparse", "pickle",
-           "Path", "SeqIO", "Seq", "re", "itertools", "pd", "np", "proportions_ztest", "plt", "seqlogo"]
-
-# Progress
-from tqdm import tqdm
-from parallelbar import progress_map, progress_starmap
+__all__ = ["os", "subprocess", "argparse", "pickle", "Path", "SeqIO", "Seq",
+           "re", "itertools", "pd", "np", "proportions_ztest", "plt", "seqlogo"]
 
 # Input/Output
 import os
@@ -24,6 +20,10 @@ import itertools
 import pandas as pd
 import numpy as np
 from statsmodels.stats.proportion import proportions_ztest
+
+# Ignore pkg_resources warning
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, message=".*pkg_resources.*")
 
 # Visualize Data
 import matplotlib.pyplot as plt

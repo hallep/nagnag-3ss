@@ -478,7 +478,7 @@ def consolidate_effects(suffix:str, n_index:int, n_cols:int, metric:str):
 
 def analyze_db(db:str=None):
 
-    log_fn(db.replace("_", " ") if db else "hg38 reference", sub=True)
+    log_fn(db.replace("_", " ") if db else "hg38 reference", sub=1)
 
     if db:
         get_proteome_effects(db)
