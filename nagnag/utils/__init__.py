@@ -11,6 +11,7 @@ __all__ = ["ROOT", "seq", "vnt", "log_script", "log_fn", "single_map", "multi_ma
 # Root Folder
 from pathlib import Path
 ROOT = Path(__file__).parent.parent.parent
+''' Root directory '''
 
 # Modules
 from . import seq

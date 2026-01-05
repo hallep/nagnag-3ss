@@ -15,11 +15,11 @@ from utils.vnt import txt_cols, vcf_cols
 
 # arguments
 parser = argparse.ArgumentParser()
-parser.add_argument("-H", "--ignore-HGMD", action="store_true", help="Do not process/analyze HGMD Splice data")
 parser.add_argument("-s", "--splice", metavar="FILE", type=Path, default=Path(f"{ROOT}/src/HGMD_pro/splice.txt"),
                     help=f"path to HGMD splice file [{ROOT}/src/HGMD_pro/splice.txt]")
 parser.add_argument("-c", "--coords", metavar="FILE", type=Path, default=Path(f"{ROOT}/src/HGMD_pro/hg38_coords.txt"),
                     help=f"path to HGMD hg38_coords file [{ROOT}/src/HGMD_pro/hg38_coords.txt]")
+parser.add_argument("-H", "--ignore-HGMD", action="store_true", help="Do not process/analyze HGMD Splice variants")
 args = parser.parse_args()
 
 # get data

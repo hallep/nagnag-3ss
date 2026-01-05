@@ -7,7 +7,7 @@ from utils.seq import N, TSNS, OUT, AA, get_tsn, get_categorical_outcomes
 
 # Variant Databases
 parser = argparse.ArgumentParser()
-parser.add_argument("-H", "--ignore-HGMD", action="store_true", help="Do not process/analyze HGMD Splice data")
+parser.add_argument("-H", "--ignore-HGMD", action="store_true", help="Do not process/analyze HGMD Splice variants")
 args = parser.parse_args()
 
 vnt_dbs = all_vnt_dbs

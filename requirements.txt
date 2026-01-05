@@ -9,3 +9,6 @@ matplotlib
 seqlogo
 ghostscript<=9.56
 setuptools<81
+maskpass
+sqlalchemy
+mysql-connector-python

@@ -15,10 +15,11 @@ data/
 paper_tables/
 
 # temporary files/folders
-*.log
+.old/
 app_data.py
 data.py
 tables.py
-.old/
+fdata.py
+*.log
 *.png
 *.svg

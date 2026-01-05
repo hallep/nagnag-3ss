@@ -14,8 +14,8 @@ from utils.vnt import dtypes, all_vnt_dbs
 
 # Variant Databases
 parser = argparse.ArgumentParser()
-parser.add_argument("-t", "--num-threads", type=int, help="maximum number of parallel threads to use")
-parser.add_argument("-H", "--ignore-HGMD", action="store_true", help="Do not process/analyze HGMD Splice data")
+parser.add_argument("-t", "--num-threads", type=int, default=24, help="Number of parallel threads available")
+parser.add_argument("-H", "--ignore-HGMD", action="store_true", help="Do not process/analyze HGMD Splice variants")
 args = parser.parse_args()
 
 vnt_dbs = all_vnt_dbs
