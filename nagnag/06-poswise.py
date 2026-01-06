@@ -54,12 +54,12 @@ def poswise_freq_1nag():
 
     # counts
     count = pd.DataFrame({(ph, "all", pos) : freq[i][j] for i,ph in enumerate(phase)
-                          for j,pos in enumerate(position)}, index=N)
+                          for j,pos in enumerate(position)}, index=pd.Index(N, name="base"))
     count.to_csv(f"{ROOT}/proteome/1nag_poswise_freq_count.txt", sep="\t", index=True)
 
     # proportions
     prop = pd.DataFrame({(ph, "all", pos) : freq[i][j]/sum(freq[i][j]) for i,ph in enumerate(phase)
-                         for j,pos in enumerate(position)}, index=N)
+                         for j,pos in enumerate(position)}, index=pd.Index(N, name="base"))
     prop.to_csv(f"{ROOT}/proteome/1nag_poswise_freq.txt", sep="\t", index=True)
 
 # NAGNAG position-wise base frequencies
@@ -111,12 +111,12 @@ def poswise_freq_nagnag():
 
     # counts
     count = pd.DataFrame({(ph, st, pos) : freq[i][j][k] for i,ph in enumerate(phase)
-                          for j,st in enumerate(stype) for k,pos in enumerate(position)}, index=N)
+                          for j,st in enumerate(stype) for k,pos in enumerate(position)}, index=pd.Index(N, name="base"))
     count.to_csv(f"{ROOT}/proteome/nagnag_poswise_freq_count.txt", sep="\t", index=True)
 
     # proportions
     prop = pd.DataFrame({(ph, st, pos) : freq[i][j][k]/sum(freq[i][j][k]) for i,ph in enumerate(phase)
-                         for j,st in enumerate(stype) for k,pos in enumerate(position)}, index=N)
+                         for j,st in enumerate(stype) for k,pos in enumerate(position)}, index=pd.Index(N, name="base"))
     prop.to_csv(f"{ROOT}/proteome/nagnag_poswise_freq.txt", sep="\t", index=True)
 
 # ===== RUN ===== #

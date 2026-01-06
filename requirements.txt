@@ -1,5 +1,3 @@
-tqdm
-parallelbar
 pathlib
 biopython
 pandas

@@ -1,6 +1,10 @@
 # NAGNAG 3 Splice Sites
 Code developed and used for analyses presented in _The Role of NAGNAG 3' Splice Sites in the Flow of Genetic Information_
 
+### Software Requirements
+All analyses were run using Python 3.14.2. Compatibility with other versions has not been tested, but most Python 3 versions should work. See `requirements.txt` for Python package requirements.
+BEDTools (https://bedtools.readthedocs.io/) is also required for variant analyses.
+
 ### Code
 
 Scripts for data parsing and analysis are in `nagnags`

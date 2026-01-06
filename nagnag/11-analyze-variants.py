@@ -214,18 +214,15 @@ def get_possible_vc(phase_freq:dict[int,dict[str,int]]) -> pd.DataFrame:
             df.insert(loc=i+6, column=n, value=c)
 
     # COMBINED
-    p3 = pd.concat([p0, p1, p2])
-
-    f = np.array([list(ph.values()) for ph in phase_freq.values()])
-    f0, f1, f2 = f.sum(axis=1) / f.sum()
+    dfs = [p0, p1, p2]
+    p3 = pd.concat(dfs)
     
     p3["phase"] = [3] * len(p3)
     for col in ["exp_stoch", "exp_splice"]:
-        p3[col] = pd.concat([p0[col] * f0, p1[col] * f1, p2[col] * f2])
+        p3[col] = pd.concat([p[col] * f for p,f in zip(dfs, phase_freq["all"])])
 
-    a = f / f.sum(axis=1)
-    for r,s in enumerate(["ps", "ds", "as"]):
-        p3[f"exp_{s}"] = pd.concat([p0[col] * a[0][r], p1[col] * a[1][r], p2[col] * a[2][r]])
+    for s in ["ps", "ds", "as"]:
+        p3[f"exp_{s}"] = pd.concat([p[col] * f for p,f in zip(dfs, phase_freq[s])])
 
     # ALL
     vc = pd.concat([p0, p1, p2, p3]).set_index(keys=["phase", "vc_ps", "vc_ds"])
@@ -308,9 +305,13 @@ def count_transitions(db:str=None):
     else:
         scen_vc = [list(zip(df["splice_type"], df["vc_ps"], df["vc_ds"])) for df in scens_phase]
 
+    # phase frequencies
+    st, ph = scens["splice_type"], scens["phase"]
+    freqs = {c : {p : len(scens[(st == s) & (ph == p)])/sum(st == s) for p in range(3)}
+             for c,s in zip(["all", "ps", "ds", "as"], [st, "PS", "DS", "AS"])}
+
     # Variable Codons
-    vc = get_possible_vc({p : {s : len(scens[(scens["phase"] == p) & (scens["splice_type"] == s)]) 
-                               for s in ["PS", "DS", "AS"]} for p in range(3)})
+    vc = get_possible_vc(freqs)
     
     # possible variable codons
     codons = [vc.loc[p].index.values for p in range(4)]
@@ -327,12 +328,7 @@ def count_transitions(db:str=None):
         vc["num_destroy"] = [svcs.count(("DESTROY",p,d)) for svcs,vcs in zip(scen_ref, codons) for p,d in vcs]
         vc.insert(loc=len(vc.columns)-3, column="num", value=vc["num_create"] + vc["num_alter_ref"] + vc["num_alter_alt"] + vc["num_destroy"])
         
-        # proportions
-        vc["prop"] = [x / vc.loc[p]["num"].sum() for p in range(4) for x in vc.loc[p]["num"]]
-        vc["prop_create"] = [x / vc.loc[p]["num_create"].sum() for p in range(4) for x in vc.loc[p]["num_create"]]
-        vc["prop_alter_ref"] = [x / vc.loc[p]["num_alter_ref"].sum() for p in range(4) for x in vc.loc[p]["num_alter_ref"]]
-        vc["prop_alter_alt"] = [x / vc.loc[p]["num_alter_alt"].sum() for p in range(4) for x in vc.loc[p]["num_alter_alt"]]
-        vc["prop_destroy"] = [x / vc.loc[p]["num_destroy"].sum() for p in range(4) for x in vc.loc[p]["num_destroy"]]
+        suffices = ["", "_create", "_alter_ref", "_alter_alt", "_destroy"]
     else:
         # counts
         vc["num_ps"] = [svcs.count(("PS",p,d)) for svcs,vcs in zip(scen_vc, codons) for p,d in vcs]
@@ -340,12 +336,12 @@ def count_transitions(db:str=None):
         vc["num_as"] = [svcs.count(("AS",p,d)) for svcs,vcs in zip(scen_vc, codons) for p,d in vcs]
         vc.insert(loc=len(vc.columns)-3, column="num", value=vc["num_ps"] + vc["num_ds"] + vc["num_as"])
 
-        # proportions
-        vc["prop"] = [x / vc.loc[p]["num"].sum() for p in range(4) for x in vc.loc[p]["num"]]
-        vc["prop_as"] = [x / vc.loc[p]["num_as"].sum() for p in range(4) for x in vc.loc[p]["num_as"]]
-        vc["prop_ps"] = [x / vc.loc[p]["num_ps"].sum() for p in range(4) for x in vc.loc[p]["num_ps"]]
-        vc["prop_ds"] = [x / vc.loc[p]["num_ds"].sum() for p in range(4) for x in vc.loc[p]["num_ds"]]
-    
+        suffices = ["", "_ps", "_ds", "_as"]
+
+    # proportions
+    for suffix in suffices:
+        vc[f"prop{suffix}"] = [x / vc.loc[p][f"num{suffix}"].sum() for p in range(4) for x in vc.loc[p][f"num{suffix}"]]
+
     # save
     vc.to_csv(dst_vc, sep="\t")
 

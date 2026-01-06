@@ -195,17 +195,19 @@ def combine(dfs:dict[int, pd.DataFrame]) -> pd.DataFrame:
     df = pd.concat(dfs.values())
     df.index.names = dfs[0].index.names
 
-    # expected
-    freqs = {p : sum(ph == p) / len(scens) for p in range(3)}
-    for col in itertools.product(["exp"], ["exp_stoch", "exp_splice"]):        
-        df[col] = pd.concat([dfs[p][col] * freqs[p] for p in range(3)]).values
+    freqs = {c : {p : len(scens[(st == s) & (ph == p)])/sum(st == s) for p in range(3)}
+             for c,s in zip(st_cols, stypes)}
     
-    phFreq = {s : {p : len(scens[(st == s) & (ph == p)])/sum(st == s) for p in range(3)} for s in stypes[1:]}
-    for c,s in zip(st_cols[1:], stypes[1:]):
-        col = ("exp", f"exp_{c}")
-        df[col] = pd.concat([dfs[p][col] * phFreq[s][p] for p in range(3)]).values
+    # expected (all)
+    for col in itertools.product(["exp"], ["exp_stoch", "exp_splice"]):        
+        df[col] = pd.concat([dfs[p][col] * freqs["all"][p] for p in range(3)]).values
 
-    # observed proportions
+    # expected (splice type)
+    for c in st_cols[1:]:
+        col = ("exp", f"exp_{c}")
+        df[col] = pd.concat([dfs[p][col] * freqs[c][p] for p in range(3)]).values
+
+    # observed
     for c,s in zip(st_cols, stypes):
         df[("prop", c)] = df[("num", c)] / sum(st == s)
     
@@ -218,7 +220,7 @@ def get_out(vc:pd.DataFrame) -> pd.DataFrame:
 
     def cat(col:str) -> pd.DataFrame:
         return pd.DataFrame({c : [vc[vc[("tsn", col)].str.contains(a, regex=False)][c].sum() for a in AA]
-                                for c in vc.columns.values[5:]}, index=AA)
+                             for c in vc.columns.values[5:]}, index=AA)
     
     out = pd.concat([cat("ins_aa"), cat("del_aa")], keys=["ins", "del"])
     out.index.names = ["cat", "aa"]

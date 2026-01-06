@@ -74,7 +74,7 @@ def create_3ss_diagrams(iflank:int=30, eflank:int=3):
                     show_xaxis=False, show_yaxis=False, stacks_per_line=iflank+eflank+12)
 
 # 5' Splice Site Diagrams
-def create_5ss_diagrams(eflank:int=5, iflank:int=9, u1_len:int=13):
+def create_5ss_diagrams(eflank:int=5, iflank:int=8, u1_len:int=13):
 
     ''' Create diagrams for 5' splice sites and the U1 snRNA
     
@@ -169,8 +169,8 @@ def create_nc_v_cds_logo(stype:str|None=None):
     # get bases
     scens["u-2"] = scens["up_seq"].str.get(-2).str.upper()
     scens["u-1"] = scens["up_seq"].str.get(-1).str.upper()
-    scens["n2"] = scens["ssite_seq"].str.get(3).str.upper()
     scens["n1"] = scens["ssite_seq"].str.get(0).str.upper()
+    scens["n2"] = scens["ssite_seq"].str.get(3).str.upper()
     scens["d1"] = scens["down_seq"].str.get(0).str.upper()
     scens["d2"] = scens["down_seq"].str.get(1).str.upper()
 
