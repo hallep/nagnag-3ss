@@ -1,4 +1,7 @@
-''' Create NAGNAG motif heatmaps, split by splice type '''
+''' Create NAGNAG motif heatmaps, split by splice type
+    
+Determine proximal (pnag) and distal (dnag) NAG strength
+'''
 
 from lib import pd, np, plt
 from utils import ROOT, log_script, log_fn
@@ -69,11 +72,25 @@ def create_motif_heatmap(sfx:str, cm:str, cth:str, tmax:float, nticks:int, cmax:
     # save figure
     fig.savefig(f"figures/heatmaps/{sfx}_nagnag_motifs.svg", transparent=True)
 
-# ===== RUN ===== #
-log_script("03-motifs.py")
-log_fn("Creating NAGNAG motif heatmaps")
+# # ===== RUN ===== #
+# log_script("03-motifs.py")
+# log_fn("Creating NAGNAG motif heatmaps")
 
-create_motif_heatmap(sfx="all", cm="YlOrRd", cth=0.3, tmax=0.3, nticks=4)
-create_motif_heatmap(sfx="ps", cm="YlGn", cth=0.35, tmax=0.4, nticks=5)
-create_motif_heatmap(sfx="ds", cm="RdPu", cth=0.3, tmax=0.3, nticks=4)
-create_motif_heatmap(sfx="as", cm="PuBu", cth=0.35, tmax=0.4, nticks=5)
+# create_motif_heatmap(sfx="all", cm="YlOrRd", cth=0.3, tmax=0.3, nticks=4)
+# create_motif_heatmap(sfx="ps", cm="YlGn", cth=0.35, tmax=0.4, nticks=5)
+# create_motif_heatmap(sfx="ds", cm="RdPu", cth=0.3, tmax=0.3, nticks=4)
+# create_motif_heatmap(sfx="as", cm="PuBu", cth=0.35, tmax=0.4, nticks=5)
+
+# === NAG Strength === #
+log_fn("Calculating motif NAG strength")
+
+sites = pd.read_csv(f"{ROOT}/sites/nagnag_3ss.txt", sep="\t", index_col=0)
+
+# 1-NAG strength
+st = pd.read_csv(f"{ROOT}/stats/1nag_motif_freq.txt", sep="\t", index_col=0)["prop_ss"].to_dict()
+
+# compute strength
+sites["pnag_strength"] = sites["ssite_seq"].apply(lambda x: st[x[:3].upper()])
+sites["dnag_strength"] = sites["ssite_seq"].apply(lambda x: st[x[3:].upper()])
+
+sites.to_csv(f"{ROOT}/sites/nagnag_3ss.txt", sep="\t", index=True)

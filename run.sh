@@ -70,8 +70,10 @@ python nagnag/09-find-variants.py $THREADS $HARG
 mkdir -p variants/stats
 python nagnag/10-count-variants.py $THREADS $HARG
 
-mkdir -p variants/proteome
 python nagnag/11-analyze-variants.py $HARG
+
+mkdir -p variants/proteome
+python nagnag/12-variant-proteome.py $HARG
 
 # Done
 echo "[$(date +"%Y-%m-%d %H:%M:%S")] ---------- DONE ----------" >&2

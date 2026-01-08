@@ -253,36 +253,22 @@ def nagnag_scen_phase_freq():
     }).set_index(keys="phase", inplace=False)
     df.to_csv("stats/nagnag_scen_phase_freq.txt", sep="\t")
 
-# # ===== RUN ===== #
-# log_script("01-sites.py")
-# log_fn("Computing splice site frequency statistics")
+# ===== RUN ===== #
+log_script("01-sites.py")
+log_fn("Computing splice site frequency statistics")
 
-# log_fn("3' splice site types", sub=1)
-# ss_type_freq()
-# log_fn("Expected NAGNAG frequency", sub=1)
-# exp_obs_nagnag_freq()
+log_fn("3' splice site types", sub=1)
+ss_type_freq()
+log_fn("Expected NAGNAG frequency", sub=1)
+exp_obs_nagnag_freq()
 
-# # Motifs
-# log_fn("1-NAG motifs", sub=1)
-# canon_1nag_motif_freq()
-# log_fn("NAGNAG motifs", sub=1)
-# nagnag_motif_freq()
+# Motifs
+log_fn("1-NAG motifs", sub=1)
+canon_1nag_motif_freq()
+log_fn("NAGNAG motifs", sub=1)
+nagnag_motif_freq()
 
-# log_fn("NAGNAG splice types", sub=1)
-# nagnag_splice_type_freq()
-# log_fn("NAGNAG splice scenario phases", sub=1)
-# nagnag_scen_phase_freq()
-
-
-df = pd.read_csv(f"{ROOT}/sites/nagnag_scens.txt", sep="\t", index_col=0)
-
-phases = [-1, 0, 1, 2]
-stypes = ["PS", "DS", "AS"]
-
-num = np.array([[len(df[(df["phase"] == p) & (df["splice_type"] == s)]) for s in stypes] for p in phases])
-print(num)
-sTotal = num.sum(axis=0, keepdims=True)
-sTotal = np.concatenate((sTotal, sTotal.sum(keepdims=True)), axis=1)
-pTotal = num.sum(axis=1, keepdims=True)
-
-np.concat
+log_fn("NAGNAG splice types", sub=1)
+nagnag_splice_type_freq()
+log_fn("NAGNAG splice scenario phases", sub=1)
+nagnag_scen_phase_freq()

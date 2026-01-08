@@ -1,7 +1,7 @@
 ''' External package imports '''
 
 __all__ = ["os", "subprocess", "argparse", "pickle", "Path", "SeqIO", "Seq",
-           "re", "itertools", "pd", "np", "proportions_ztest", "plt", "seqlogo"]
+           "re", "itertools", "pd", "np", "st", "proportions_ztest", "plt", "seqlogo"]
 
 # Input/Output
 import os
@@ -19,6 +19,7 @@ import re
 import itertools
 import pandas as pd
 import numpy as np
+import scipy.stats as st
 from statsmodels.stats.proportion import proportions_ztest
 
 # Ignore pkg_resources warning

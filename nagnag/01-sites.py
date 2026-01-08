@@ -430,6 +430,7 @@ def isolate_nagnags():
 
     # isolate NAGNAG splice sites
     nagnag_ss = ssites[(ssites["uppercase"] == 1) & (ssites["ssite_type"] == "2C")]
+    nagnag_ss["splice_type"] = nagnag_ss["csite_pos"].apply(lambda x: {"0":"PS", "1":"DS", "0,1":"AS"}[x])
     nagnag_ss.to_csv(f"{ROOT}/sites/nagnag_3ss.txt", sep="\t", index=False)
 
     # isolate cleavage sites

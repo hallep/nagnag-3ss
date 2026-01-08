@@ -1,7 +1,7 @@
 ''' Helper constants and functions pertaining to DNA, RNA, and amino acid sequences '''
 
 from . import ROOT
-from lib import pickle, re, Seq
+from lib import pickle, re, itertools, Seq, pd, np
 
 hg38:dict[str, Seq.Seq] = pickle.load(open(f"{ROOT}/src/hg38", "rb"))
 
@@ -166,6 +166,121 @@ def get_tsn(up:str, motif:str, down:str, phase:str|int) -> tuple[str, str, str, 
     aattype = get_aattype(ps_aa, ds_aa)
 
     return ps_codon, ds_codon, ps_aa, ds_aa, aattype
+
+def get_all_vc(phase:int) -> pd.DataFrame:
+    
+    ''' Get all possible NAGNAG variable codons
+
+    src:
+    * 1-NAGs: `proteome/1nag_poswise_freq.txt`
+    * NAGNAGs: `proteome/nagnag_poswise_freq.txt`
+    
+    Returns
+    -------
+    vc : pandas.DataFrame
+        * index: "phase", "vc_ps", "vc_ds"
+        * columns: "aa_ps", "aa_ds", "aattype", "ins_aa", "del_aa", "exp_stoch", "exp_splice", "exp_ps", "exp_ds", "exp_as"
+    '''
+
+    def exp_vc_freq(phase:int, wsource:int=0, stype:str="all") -> list[float]:
+
+        ''' Get expected variable codon frequencies
+
+        Parameters
+        ----------
+        phase : int {0, 1, 2}
+            NAGNAG phase
+        wsource : int {0, 1}
+            weighting source
+            * 0: stochastic (all 1/4)
+            * 1: weighted
+                * exonic basese from 1-NAGs
+                * motif bases from NAGNAGs
+        stype : str {"all", "AS", "PS", "DS"} (default = "all")
+            splice type (for NAGNAGs) from which to get probabilities
+        
+        Returns
+        -------
+        _ : list[float]
+            variable codon probabilities
+        '''
+
+        # position-wise base frequencies
+        f = {
+            # stochastic
+            0 : pd.DataFrame(np.full((4, (5*4*6)), 1/4), index=N,
+                            columns=pd.MultiIndex.from_product((["all", "nc", "p0", "p1", "p2"],
+                                                                ["all", "AS", "PS", "DS"],
+                                                                ["u-2", "u-1", "n1", "n2", "d1", "d2"]))),
+
+            # weighted from 1-NAGs
+            1 : pd.read_csv(f"{ROOT}/proteome/1nag_poswise_freq.txt", sep="\t", index_col=0, header=[0,1,2]),
+
+            # weighted from NAGNAGs        
+            2 : pd.read_csv(f"{ROOT}/proteome/nagnag_poswise_freq.txt", sep="\t", index_col=0, header=[0,1,2])
+        }
+
+        # base positions
+        pos = {
+            0 : ["n2"],
+            1 : ["u-1", "n2", "d1", "d2"],
+            2 : ["u-2", "u-1", "n2", "d1"]
+        }[phase]
+        
+        # weight sources
+        def source(base:str) -> tuple[int, str, str]:
+
+            # all stochastic
+            if wsource == 0:
+                return 0, "all", "all"
+
+            # NAGNAG base: use non-coding NAGNAGs
+            if base.startswith("n"):
+                return 2, "nc", stype
+            
+            # upstream bases: use 1-NAG (in-phase)
+            if base.startswith("u"):
+                return 1, f"p{phase}", "all"
+            
+            # downstream bases: stochastic
+            return 0, "all", "all"
+
+        # weights, phases, splice types
+        wgts, phases, stypes = zip(*[source(x) for x in pos])
+
+        # variable bases
+        variable = list(itertools.product(N, repeat=1 if (phase == 0) else 4))
+
+        return [np.prod([f[w][p][s][x][b] for w,p,s,x,b in zip(wgts, phases, stypes, pos, vb)]) for vb in variable]
+
+    # variable bases
+    vb = list(itertools.product(N, repeat=4))
+
+    # amino acid transition
+    if phase == 0:
+        tsn = [get_tsn(up="NNN", motif=f"NAG{n}AG", down="NNN", phase=0) for n in N]
+    elif phase == 1:
+        tsn = [get_tsn(up=f"NN{v[0]}", motif=f"NNN{v[1]}AG", down=f"{v[2]}{v[3]}N", phase=1) for v in vb]
+    elif phase == 2:
+        tsn = [get_tsn(up=f"N{v[0]}{v[1]}", motif=f"NNN{v[2]}AG", down=f"{v[3]}NN", phase=2) for v in vb]
+
+    vc_ps, vc_ds, aa_ps, aa_ds, aattype = zip(*tsn)
+    ins_aa, del_aa = zip(*[get_categorical_outcomes(1, p, d) for p,d in zip(aa_ps, aa_ds)])
+
+    vc = pd.DataFrame({
+        ("tsn", "aa_ps") : aa_ps,
+        ("tsn", "aa_ds") : aa_ds,
+        ("tsn", "aattype") : aattype,
+        ("tsn", "ins_aa") : ins_aa,
+        ("tsn", "del_aa") : del_aa,
+        ("exp", "exp_stoch") : exp_vc_freq(phase=phase, wsource=0, stype="all"),
+        ("exp", "exp_splice") : exp_vc_freq(phase=phase, wsource=1, stype="all"),
+        ("exp", "exp_ps") : exp_vc_freq(phase=phase, wsource=1, stype="PS"),
+        ("exp", "exp_ds") : exp_vc_freq(phase=phase, wsource=1, stype="DS"),
+        ("exp", "exp_as") : exp_vc_freq(phase=phase, wsource=1, stype="AS"),
+    }, index=pd.MultiIndex.from_tuples(zip(vc_ps, vc_ds), names=["vc_ps", "vc_ds"]))
+
+    return vc
 
 # Amino Acid Outcomes
 OUT = ["ins", "del"]

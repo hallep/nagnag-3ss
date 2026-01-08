@@ -58,7 +58,7 @@ def count_sites():
         "off" : [len(df) for df in off],
         "canon" : [len(df) for df in can]
 
-    }, index=vnt_dbs).T
+    }, index=pd.Index(vnt_dbs, names=["db"])).T
     df.insert(loc=0, column="total", value=[n3, nO+nC, nO, nC])
 
     df.to_csv(f"{ROOT}/variants/stats/vnt_site_freq.txt", sep="\t", index_label="database")
@@ -113,12 +113,19 @@ def count_events_scens():
         * effect: "create", "alter", "destroy", "all"
     * columns: "dbSNP_common", "dbSNP_rare", "ClinVar", "HGMD_splice"
     
-    `variants/stats/nagnag_vnt_scenario_freq.txt`
+    `variants/stats/nagnag_vnt_scenario_phase_freq.txt`
     ---------------------------------------------
     * rows: (vnt_db, effect)
         * vnt_db: "dbSNP_common", "dbSNP_rare", "ClinVar", "HGMD_splice"
         * effect: "create", "alter", "destroy", "all"
     * columns: "nc", "p0", "p1", "p2", "cds", "all"
+
+    `variants/stats/nagnag_vnt_scenario_stype_freq.txt`
+    ---------------------------------------------
+    * rows: (vnt_db, effect)
+        * vnt_db: "dbSNP_common", "dbSNP_rare", "ClinVar", "HGMD_splice"
+        * effect: "create", "alter", "destroy", "all"
+    * columns: "ps", "ds", "as", "all"
     '''
 
     # load variant events + scenarios
@@ -132,12 +139,12 @@ def count_events_scens():
     # events
     cE = np.array([[(df["vnt_effect"] == e).sum() for df in events.values()] for e in effects])
     cE = np.append(cE, np.sum(cE, axis=0).reshape(1, -1), axis=0)
-    dfE = pd.DataFrame(cE, index=["create", "alter", "destroy", "all"], columns=vnt_dbs)
+    dfE = pd.DataFrame(cE, index=pd.Index(["create", "alter", "destroy", "all"], name="effect"), columns=vnt_dbs)
 
     # scenarios
     cS = np.array([[(df["vnt_effect"] == e).sum() for df in scens.values()] for e in effects])
     cS = np.append(cS, np.sum(cS, axis=0).reshape(1, -1), axis=0)
-    dfS = pd.DataFrame(cS, index=["create", "alter", "destroy", "all"], columns=vnt_dbs)
+    dfS = pd.DataFrame(cS, index=pd.Index(["create", "alter", "destroy", "all"], name="effect"), columns=vnt_dbs)
 
     # combined
     df = pd.concat((dfE, dfS), axis=0, keys=["events", "scenarios"])
@@ -159,7 +166,7 @@ def count_events_scens():
         c = np.append(c, np.sum(c[:, :4], axis=1).reshape(-1, 1), axis=1)
 
         # create DataFrame
-        freq = pd.DataFrame(c, index=["create", "alter", "destroy", "all"],
+        freq = pd.DataFrame(c, index=pd.Index(["create", "alter", "destroy", "all"], name="effect"),
                             columns=["nc", "p0", "p1", "p2", "cds", "all"])
 
         return freq
@@ -167,8 +174,32 @@ def count_events_scens():
     # by phase
     dfs = [by_phase(db) for db in vnt_dbs]
     df = pd.concat(dfs, axis=0, keys=vnt_dbs)
-    df.to_csv(f"{ROOT}/variants/stats/nagnag_vnt_scenario_freq.txt",
+    df.to_csv(f"{ROOT}/variants/stats/nagnag_vnt_scenario_phase_freq.txt",
               sep="\t", index_label=["vnt_db", "effect"])
+
+    # by scenario splice type
+    effects = ["CREATE", "ALTER", "DESTROY"]
+    stypes = ["PS", "DS", "AS"]
+
+    def by_stype(db:str) -> pd.DataFrame:
+
+        df = scens[db]
+
+        # count by phase + effect
+        c = [[df[(df["splice_type"] == s) & (df["vnt_effect"] == e)].__len__() for s in stypes] for e in effects]
+        c = np.append(c, np.sum(c, axis=0).reshape(1, -1), axis=0)
+        c = np.append(c, np.sum(c, axis=1).reshape(-1, 1), axis=1)
+
+        # create DataFrame
+        freq = pd.DataFrame(c, index=pd.Index(["create", "alter", "destroy", "all"], name="effect"),
+                            columns=["ps", "ds", "as", "all"])
+
+        return freq
+
+    # by phase
+    dfs = [by_stype(db) for db in vnt_dbs]
+    df = pd.concat(dfs, axis=0, keys=vnt_dbs, names=["db"])
+    df.to_csv(f"{ROOT}/variants/stats/nagnag_vnt_scenario_stype_freq.txt", sep="\t", index_label=["vnt_db", "effect"])
 
 # Variant-affected base frequencies
 def count_affected_bases():
@@ -216,17 +247,17 @@ def count_affected_bases():
 
 # ===== RUN ===== #
 if __name__ == "__main__":
-    log_script("10-count-variants.py")
-    log_fn("Computing variant frequency statistics")
+    # log_script("10-count-variants.py")
+    # log_fn("Computing variant frequency statistics")
 
-    log_fn("variant-affected sites", sub=1)
-    count_sites()
+    # log_fn("variant-affected sites", sub=1)
+    # count_sites()
 
-    log_fn("variants", sub=1)
-    count_vnts()
+    # log_fn("variants", sub=1)
+    # count_vnts()
 
     log_fn("events and scenarios by variant effect", sub=1)
     count_events_scens()
 
-    log_fn("variant-affected base", sub=1)
-    count_affected_bases()
+    # log_fn("variant-affected base", sub=1)
+    # count_affected_bases()

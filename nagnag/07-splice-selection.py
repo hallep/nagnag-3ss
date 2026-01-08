@@ -40,7 +40,7 @@ Source:
 
 from utils import ROOT, log_script, log_fn
 from lib import itertools, pd, np
-from utils.seq import N, AA, get_tsn, get_categorical_outcomes
+from utils.seq import N, AA, get_all_vc
 
 # Expected variable codon frequency
 def exp_vc_freq(phase:int, wsource:int=0, stype:str="all") -> list[float]:
@@ -87,19 +87,30 @@ def exp_vc_freq(phase:int, wsource:int=0, stype:str="all") -> list[float]:
         1 : ["u-1", "n2", "d1", "d2"],
         2 : ["u-2", "u-1", "n2", "d1"]
     }[phase]
-
+    
     # weight sources
-    wgts = [2 if (x == "n2") else 1 for x in pos] if (wsource == 1) else [0] * len(pos)
+    def source(base:str) -> tuple[int, str, str]:
 
-    # phases
-    phases = ["nc" if (x == "n2") else f"p{phase}" for x in pos]
+        # all stochastic
+        if wsource == 0:
+            return 0, "all", "all"
 
-    # splice types
-    stypes = [stype if (x == "n2") else "all" for x in pos]
+        # NAGNAG base: use non-coding NAGNAGs
+        if base.startswith("n"):
+            return 2, "nc", stype
+        
+        # upstream bases: use 1-NAG (in-phase)
+        if base.startswith("u"):
+            return 1, f"p{phase}", "all"
+        
+        # downstream bases: stochastic
+        return 0, "all", "all"
+
+    # weights, phases, splice types
+    wgts, phases, stypes = zip(*[source(x) for x in pos])
 
     # variable bases
-    r = 1 if (phase == 0) else 4
-    variable = list(itertools.product(N, repeat=r))
+    variable = list(itertools.product(N, repeat=1 if (phase == 0) else 4))
 
     return [np.prod([f[w][p][s][x][b] for w,p,s,x,b in zip(wgts, phases, stypes, pos, vb)]) for vb in variable]
 
@@ -121,38 +132,19 @@ st_cols = ["all", "ps", "ds", "as"]
 # === Variable Codons === #
 def get_vc(phase:int) -> pd.DataFrame:
     
-    # variable bases
-    vb = list(itertools.product(N, repeat=4))
+    # possible variable codons
+    vc = get_all_vc(phase)
 
-    # amino acid transition
-    if phase == 0:
-        tsn = [get_tsn(up="NNN", motif=f"NAG{n}AG", down="NNN", phase=0) for n in N]
-    elif phase == 1:
-        tsn = [get_tsn(up=f"NN{v[0]}", motif=f"NNN{v[1]}AG", down=f"{v[2]}{v[3]}N", phase=1) for v in vb]
-    elif phase == 2:
-        tsn = [get_tsn(up=f"N{v[0]}{v[1]}", motif=f"NNN{v[2]}AG", down=f"{v[3]}NN", phase=2) for v in vb]
+    # frequencies
+    freq = np.array([[len(scens[(ph == phase) & (st == s) & (ps == p) & (ds == d)]) for p,d in vc.index.values] for s in stypes])
 
-    vc_ps, vc_ds, aa_ps, aa_ds, aattype = zip(*tsn)
-    ins_aa, del_aa = zip(*[get_categorical_outcomes(1, p, d) for p,d in zip(aa_ps, aa_ds)])
-    freq = np.array([[len(scens[(ph == phase) & (st == s) & (ps == p) & (ds == d)]) for p,d in zip(vc_ps, vc_ds)] for s in stypes])
+    # counts
+    for s,f in zip(st_cols, freq):
+        vc[("num", s)] = f
 
-    d = {
-        ("tsn", "aa_ps") : aa_ps,
-        ("tsn", "aa_ds") : aa_ds,
-        ("tsn", "aattype") : aattype,
-        ("tsn", "ins_aa") : ins_aa,
-        ("tsn", "del_aa") : del_aa,
-        ("exp", "exp_stoch") : exp_vc_freq(phase=phase, wsource=0, stype="all"),
-        ("exp", "exp_splice") : exp_vc_freq(phase=phase, wsource=1, stype="all"),
-        ("exp", "exp_ps") : exp_vc_freq(phase=phase, wsource=1, stype="PS"),
-        ("exp", "exp_ds") : exp_vc_freq(phase=phase, wsource=1, stype="DS"),
-        ("exp", "exp_as") : exp_vc_freq(phase=phase, wsource=1, stype="AS"),
-    }
-    d.update({("num", s) : f for s,f in zip(st_cols, freq)})
-    d.update({("prop", s) : f/sum(f) for s,f in zip(st_cols, freq)})
-
-    vc = pd.DataFrame(d).sort_values(by=("exp", "exp_splice"), ascending=False, inplace=False)
-    vc.index = pd.MultiIndex.from_tuples(zip(vc_ps, vc_ds))
+    # proportions
+    for s,f in zip(st_cols, freq):
+        vc[("prop", s)] = f/sum(f)
 
     return vc
 
