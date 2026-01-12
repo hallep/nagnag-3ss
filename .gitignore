@@ -21,6 +21,7 @@ data.py
 tables.py
 fdata.py
 test.py
+supp_tables.py
 *.log
 *.png
 *.svg

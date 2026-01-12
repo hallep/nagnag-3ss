@@ -9,7 +9,7 @@ hg38:dict[str, Seq.Seq] = pickle.load(open(f"{ROOT}/src/hg38", "rb"))
 
 CHROMS = [f"chr{c}" for c in list(map(str, range(1, 23))) + ["X", "Y", "M"]]
 N = ["A", "C", "G", "T"]
-AA = ["A", "F", "I", "L", "M", "P", "V", "W", "C", "N", "Q", "S", "T", "Y", "D", "E", "H", "K", "R", "G", "*"]
+AA = ["G", "A", "V", "L", "I", "M", "F", "W", "P", "S", "T", "C", "Y", "N", "Q", "D", "E", "K", "R", "H", "*"]
 
 # Splice Site Sequence
 def get_ss_seq(chrom:str, pos:int, strand:str, up:int=0, down:int=0, upper:bool=False) -> str:

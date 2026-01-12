@@ -321,11 +321,6 @@ def count_transitions(db:str=None):
     aatt = pd.concat([a.groupby(["phase", "aattype"]).aggregate(agg) for a in aat_phase])
     aatt.to_csv(dst_aatt, sep="\t")
 
-    cols = ["exp_stoch", "exp_splice"] if db else ["exp_stoch", "exp_splice", "exp_ps", "exp_ds", "exp_as"]
-    print(aatt.loc[0].loc[["E", "Q", "K", "*"]][cols])
-    print(aatt.loc[1].loc[["DID", "NID", "CID", "IDR", "NC", "ET"]][cols])
-    print(aatt.loc[2].loc[["DID", "NID", "CID", "IDR", "NC", "ET"]][cols])
-
 # Count inserted/deleted amino acids
 def count_outcomes(db:str=None):
 
