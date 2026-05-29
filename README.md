@@ -1,4 +1,4 @@
-# NAGNAG 3 Splice Sites
+# NAGNAG 3' Splice Sites
 Code developed and used for analyses presented in _The Role of NAGNAG 3' Splice Sites in the Flow of Genetic Information_
 
 ### Software Requirements
