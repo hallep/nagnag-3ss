@@ -1,5 +1,5 @@
 # NAGNAG 3' Splice Sites
-Code developed and used for analyses presented in _The Role of NAGNAG 3' Splice Sites in the Flow of Genetic Information_
+Code developed and used for analyses presented in _NAVid: a web server for identifying and assessing NAGNAG-affecting variants in the human genome_
 
 ### Software Requirements
 All analyses were run using Python 3.14.2. Compatibility with other versions has not been tested, but most Python 3 versions should work. See `requirements.txt` for Python package requirements.
